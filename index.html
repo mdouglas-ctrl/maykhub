@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maykon Douglas — Mayk Lee</title>
+<meta name="description" content="Construo produtos digitais sob medida — sistemas, sites, interfaces e conteúdo — unindo narrativa, design e IA.">
+
+<!-- ====================================================================== -->
+<!--  COMO ADICIONAR UM PROJETO NOVO (você mesmo, sem saber programar):     -->
+<!--  1. Copie um bloco { ... } inteiro dentro de PROJETOS abaixo            -->
+<!--  2. Cole logo depois, antes do colchete ]                              -->
+<!--  3. Troque os textos entre aspas. Salve. Pronto.                       -->
+<!--  Campos:                                                               -->
+<!--    n      -> número da ficha (01, 02...)                               -->
+<!--    titulo -> nome do projeto                                           -->
+<!--    tipo   -> categoria curta (ex: "Site institucional")               -->
+<!--    ano    -> ano                                                       -->
+<!--    papel  -> o que você fez                                            -->
+<!--    desc   -> 1-2 frases sobre o projeto                                -->
+<!--    tags   -> lista de tecnologias/habilidades                          -->
+<!--    link   -> URL pra abrir (ou "" se não tiver link ainda)             -->
+<!--    cta    -> texto do botão (ex: "Ver site", "Abrir catálogo")         -->
+<!-- ====================================================================== -->
+<script>
+const PERFIL = {
+  nome: "Maykon Douglas",
+  artistico: "Mayk Lee",
+  // >>> Edite esta frase quando quiser. É o seu posicionamento. <<<
+  tagline: "Construo produtos digitais sob medida: sistemas, sites, interfaces e conteúdo... Onde narrativa, design e IA se encontram.",
+  subtagline: "Da ideia bruta ao produto no ar, simples e prático.",
+  whatsapp: "5548991430961",
+  instagram: "mayk_lee22",
+  linkedin: "https://www.linkedin.com/in/maykondouglasmd/"
+};
+
+const PROJETOS = [
+  {
+    n: "01",
+    titulo: "Nimbulus — Site institucional",
+    tipo: "Site · Tecnologia náutica",
+    ano: "2026",
+    papel: "Estratégia, design, copy, front-end e deploy",
+    desc: "Site institucional completo para empresa de tecnologia embarcada. Identidade visual, conteúdo e publicação ponta a ponta.",
+    tags: ["Next.js", "Design", "Copywriting", "SEO", "IA"],
+    link: "https://nimbulus.com.br/",
+    cta: "Ver site no ar"
+  },
+  {
+    n: "02",
+    titulo: "Nimbulus — Catálogo de produtos 2026",
+    tipo: "Catálogo · Design editorial",
+    ano: "2026",
+    papel: "Direção visual, diagramação e produção com IA",
+    desc: "Catálogo de 15 páginas de soluções náuticas. Tratamento cinematográfico, navegação por seções e ficha técnica de cada linha de produto.",
+    tags: ["Design editorial", "Direção de arte", "IA"],
+    link: "projetos/catalogo-nimbulus.pdf",
+    cta: "Abrir catálogo"
+  },
+  {
+    n: "03",
+    titulo: "Painel de pré-produção — Curta-metragem",
+    tipo: "Sistema · Audiovisual",
+    ano: "2026",
+    papel: "Concepção e desenvolvimento da ferramenta",
+    desc: "Dashboard interativo para gerir a pré-produção de um curta: roadmap, kanban por área, painel de decisões, riscos e checklist. Nomes fictícios para proteger os envolvidos.",
+    tags: ["Gestão de produção", "Dashboard", "IA"],
+    link: "projetos/anhdnd-dashboard.html",
+    cta: "Abrir painel"
+  },
+  {
+    n: "04",
+    titulo: "The Rotfather — Dossiê de light novel",
+    tipo: "Ferramenta narrativa · Projeto autoral",
+    ano: "2026",
+    papel: "Criação, escrita e desenvolvimento",
+    desc: "Quadro de investigação interativo para desenvolver uma light novel noir: pistas, estrutura, arcos, moodboard e kanban. Tecnologia a serviço da narrativa.",
+    tags: ["Worldbuilding", "Escrita", "React"],
+    link: "projetos/rotfather-board.html",
+    cta: "Abrir dossiê"
+  },
+  {
+    n: "05",
+    titulo: "Playbook — Futebol americano",
+    tipo: "App educativo · Projeto autoral",
+    ano: "2026",
+    papel: "Concepção e desenvolvimento",
+    desc: "App interativo que ensina posições, jogadas e glossário de futebol americano com quiz e visão de campo. Conteúdo complexo traduzido em experiência simples.",
+    tags: ["UX", "Conteúdo", "React"],
+    link: "projetos/playbook-football.html",
+    cta: "Abrir app"
+  }
+];
+</script>
+
+<style>
+  :root{
+    --ink:#0a0e14;
+    --ink-2:#0f1620;
+    --panel:#121b27;
+    --line:rgba(255,255,255,.09);
+    --line-strong:rgba(255,255,255,.16);
+    --fog:#8a97a8;
+    --fog-2:#5d6b7d;
+    --chalk:#eef3f8;
+    --beam:#5ec8e0;
+    --beam-deep:#2a7d96;
+    --gold:#c9a86a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--chalk);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:clamp(80px,14vh,160px) 0 clamp(60px,9vh,110px);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;inset:0;
+    background:
+      radial-gradient(120% 80% at 78% -10%, rgba(94,200,224,.10), transparent 55%),
+      radial-gradient(90% 70% at 12% 110%, rgba(201,168,106,.07), transparent 60%);
+    pointer-events:none;
+  }
+  .slate{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--fog-2);
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    margin-bottom:30px;
+  }
+  .slate b{color:var(--beam);font-weight:500}
+  .slate .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block}
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:300;
+    font-size:clamp(40px,7vw,82px);
+    line-height:.98;
+    letter-spacing:-.02em;
+    margin-bottom:6px;
+  }
+  h1 .art{
+    display:block;
+    font-style:italic;
+    font-weight:400;
+    color:var(--beam);
+    font-size:clamp(20px,3vw,34px);
+    letter-spacing:0;
+    margin-top:14px;
+  }
+  .tagline{
+    font-family:'Fraunces',serif;
+    font-weight:300;
+    font-size:clamp(18px,2.4vw,26px);
+    line-height:1.4;
+    color:var(--chalk);
+    max-width:30ch;
+    margin:34px 0 16px;
+  }
+  .subtagline{
+    color:var(--fog);
+    font-size:15px;
+    max-width:48ch;
+  }
+
+  /* ---------- SECTION LABEL ---------- */
+  .reel-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:20px;flex-wrap:wrap;
+    padding:64px 0 8px;
+  }
+  .reel-head h2{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:500;
+    font-size:12px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--fog);
+  }
+  .reel-head .count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--fog-2);letter-spacing:.2em;
+  }
+  .reel-note{
+    font-size:12.5px;
+    font-style:italic;
+    color:var(--fog-2);
+    max-width:62ch;
+    margin:0 0 28px;
+    line-height:1.5;
+  }
+
+  /* ---------- PROJECT ROWS ---------- */
+  .reel{border-top:1px solid var(--line)}
+  .shot{
+    display:grid;
+    grid-template-columns:64px 1fr auto;
+    gap:28px;
+    align-items:start;
+    padding:34px 0;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    transition:background .35s ease;
+  }
+  .shot:hover{background:linear-gradient(90deg,rgba(94,200,224,.04),transparent 70%)}
+  .shot .n{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:30px;
+    color:var(--beam-deep);
+    line-height:1;
+    padding-top:4px;
+  }
+  .shot .body{min-width:0}
+  .shot .meta{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--fog-2);
+    margin-bottom:10px;
+    display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+  }
+  .shot .meta .yr{color:var(--gold)}
+  .shot h3{
+    font-family:'Fraunces',serif;
+    font-weight:400;
+    font-size:clamp(22px,3vw,30px);
+    line-height:1.1;
+    letter-spacing:-.01em;
+    margin-bottom:10px;
+  }
+  .shot .role{
+    color:var(--beam);
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:8px;
+  }
+  .shot .desc{
+    color:var(--fog);
+    font-size:14.5px;
+    max-width:54ch;
+    margin-bottom:16px;
+  }
+  .tags{display:flex;gap:8px;flex-wrap:wrap}
+  .tags span{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:.04em;
+    color:var(--fog);
+    border:1px solid var(--line-strong);
+    border-radius:2px;
+    padding:4px 9px;
+  }
+  .shot .act{align-self:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink);
+    background:var(--beam);
+    border:none;
+    padding:13px 20px;
+    border-radius:3px;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:transform .2s ease,box-shadow .2s ease,background .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(94,200,224,.5)}
+  .btn.ghost{
+    background:transparent;color:var(--fog-2);
+    border:1px solid var(--line-strong);
+    cursor:default;
+  }
+  .btn.ghost:hover{transform:none;box-shadow:none}
+  .btn .arrow{font-size:13px}
+
+  /* ---------- CONTACT ---------- */
+  .end{
+    padding:clamp(70px,11vh,130px) 0 90px;
+    text-align:center;
+    position:relative;
+  }
+  .end::before{
+    content:"FIM DE PRODUÇÃO";
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;letter-spacing:.4em;
+    color:var(--fog-2);
+    display:block;margin-bottom:28px;
+  }
+  .end h2{
+    font-family:'Fraunces',serif;
+    font-weight:300;
+    font-size:clamp(28px,5vw,52px);
+    line-height:1.05;
+    letter-spacing:-.02em;
+    margin-bottom:14px;
+  }
+  .end h2 em{font-style:italic;color:var(--beam)}
+  .end p{color:var(--fog);max-width:42ch;margin:0 auto 40px;font-size:15px}
+  .contacts{
+    display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  }
+  .contacts a{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;letter-spacing:.1em;
+    color:var(--chalk);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    padding:15px 22px;
+    text-decoration:none;
+    transition:border-color .25s ease,background .25s ease,transform .2s ease;
+  }
+  .contacts a:hover{
+    border-color:var(--beam);
+    background:rgba(94,200,224,.06);
+    transform:translateY(-2px);
+  }
+  .contacts a.wa:hover{border-color:#25d366;background:rgba(37,211,102,.07)}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:30px 0;
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--fog-2);
+  }
+
+  @media (max-width:680px){
+    .shot{grid-template-columns:40px 1fr;gap:16px}
+    .shot .act{grid-column:2;justify-self:start;margin-top:4px}
+    .shot .n{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="slate" id="slate"></div>
+    <h1 id="name"></h1>
+    <p class="tagline" id="tagline"></p>
+    <p class="subtagline" id="subtagline"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="reel-head">
+    <h2>Filmografia de produtos</h2>
+    <span class="count" id="count"></span>
+  </div>
+  <p class="reel-note">Os produtos desenvolvidos abaixo contêm informações fictícias ou não estão 100% completos para proteger as informações dos envolvidos.</p>
+  <section class="reel" id="reel"></section>
+</main>
+
+<section class="end">
+  <div class="wrap">
+    <h2>Tem uma ideia? <em>Eu construo.</em></h2>
+    <p>Da primeira conversa ao produto no ar. Me chama por onde for melhor pra você.</p>
+    <div class="contacts" id="contacts"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" id="foot"></div>
+</footer>
+
+<script>
+  // Hero
+  document.getElementById('slate').innerHTML =
+    'Ficha técnica <span class="dot"></span> <b>Produtos digitais · IA · Narrativa</b> <span class="dot"></span> Florianópolis · BR';
+  document.getElementById('name').innerHTML =
+    PERFIL.nome + '<span class="art">' + PERFIL.artistico + '</span>';
+  document.getElementById('tagline').textContent = PERFIL.tagline;
+  document.getElementById('subtagline').textContent = PERFIL.subtagline;
+
+  // Count
+  document.getElementById('count').textContent =
+    String(PROJETOS.length).padStart(2,'0') + ' projetos';
+
+  // Projects
+  document.getElementById('reel').innerHTML = PROJETOS.map(p => {
+    const tags = p.tags.map(t => '<span>'+t+'</span>').join('');
+    const btn = p.link
+      ? '<a class="btn" href="'+p.link+'" target="_blank" rel="noopener">'+p.cta+' <span class="arrow">↗</span></a>'
+      : '<span class="btn ghost">'+(p.cta||'Em breve')+'</span>';
+    return `
+      <article class="shot">
+        <div class="n">${p.n}</div>
+        <div class="body">
+          <div class="meta"><span>${p.tipo}</span><span class="yr">${p.ano}</span></div>
+          <h3>${p.titulo}</h3>
+          <div class="role">${p.papel}</div>
+          <p class="desc">${p.desc}</p>
+          <div class="tags">${tags}</div>
+        </div>
+        <div class="act">${btn}</div>
+      </article>`;
+  }).join('');
+
+  // Contacts
+  const wa = 'https://wa.me/'+PERFIL.whatsapp;
+  const ig = 'https://instagram.com/'+PERFIL.instagram;
+  document.getElementById('contacts').innerHTML =
+    '<a class="wa" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>' +
+    '<a href="'+ig+'" target="_blank" rel="noopener">@'+PERFIL.instagram+'</a>' +
+    '<a href="'+PERFIL.linkedin+'" target="_blank" rel="noopener">LinkedIn</a>';
+
+  // Footer
+  document.getElementById('foot').textContent =
+    '© 2026 ' + PERFIL.nome + ' — ' + PERFIL.artistico;
+</script>
+</body>
+</html>

@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Pré-produção · Curta-metragem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #100e0c;
+  --bg-soft: #1a1714;
+  --bg-card: #1f1c18;
+  --bg-elev: #26221d;
+  --line: #2e2924;
+  --line-soft: #221e1a;
+  --ink: #f5efe6;
+  --ink-soft: #c9bfae;
+  --ink-mute: #8a8175;
+  --ink-dim: #5c544a;
+  --amber: #d4a45c;
+  --amber-soft: #8b6a3a;
+  --red: #c44536;
+  --red-soft: #6b2a23;
+  --green: #7d8d6a;
+  --green-soft: #3d4634;
+  --blue: #6b8caf;
+  --blue-soft: #2e3d4f;
+  --crit: #d05a4a;
+  --high: #d4a45c;
+  --med: #6b8caf;
+  --low: #5c544a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; background: var(--bg-elev); border: 1px solid var(--line); padding: 6px 10px; outline: none; }
+input:focus, textarea:focus, select:focus { border-color: var(--amber); }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; }
+.serif { font-family: 'Fraunces', serif; }
+
+/* ============ LAYOUT ============ */
+.app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { background: var(--bg-soft); border-right: 1px solid var(--line); padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 0; min-width: 0; }
+
+/* ============ SIDEBAR ============ */
+.slate-header { padding: 0 20px 20px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.slate-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-mute); margin-bottom: 8px; }
+.slate-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--ink); margin-bottom: 4px; }
+.slate-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.countdown-box { margin: 0 20px 20px; padding: 14px; background: var(--bg-elev); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.countdown-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--amber); }
+.countdown-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.15em; color: var(--ink-mute); }
+.countdown-num { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 900; line-height: 1; color: var(--amber); margin: 4px 0; letter-spacing: -0.04em; }
+.countdown-unit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-soft); letter-spacing: 0.1em; }
+.countdown-target { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+
+.nav-list { padding: 0 12px; }
+.nav-section { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--ink-dim); padding: 12px 8px 6px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; cursor: pointer; color: var(--ink-soft); border-left: 2px solid transparent; transition: all 0.15s; font-size: 13px; }
+.nav-item:hover { background: var(--bg-card); color: var(--ink); }
+.nav-item.active { background: var(--bg-card); color: var(--amber); border-left-color: var(--amber); }
+.nav-item .num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-dim); min-width: 16px; }
+.nav-item.active .num { color: var(--amber-soft); }
+.nav-item .badge { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; background: var(--red-soft); color: var(--ink); padding: 1px 5px; }
+.nav-item .badge.warn { background: var(--amber-soft); }
+
+/* ============ MAIN HEADER ============ */
+.topbar { background: var(--bg); border-bottom: 1px solid var(--line); padding: 18px 36px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.topbar-left { display: flex; align-items: baseline; gap: 16px; }
+.topbar-title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.topbar-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.12em; text-transform: uppercase; }
+.topbar-right { display: flex; gap: 18px; align-items: center; }
+.stat { display: flex; flex-direction: column; align-items: flex-end; }
+.stat-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-num.crit { color: var(--red); }
+.stat-num.warn { color: var(--amber); }
+.stat-num.ok { color: var(--green); }
+.stat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+/* ============ CONTENT ============ */
+.content { padding: 32px 36px 80px; max-width: 1400px; }
+.view { display: none; }
+.view.active { display: block; }
+
+.view-header { margin-bottom: 28px; }
+.view-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--amber); margin-bottom: 6px; text-transform: uppercase; }
+.view-title { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 8px; }
+.view-desc { color: var(--ink-soft); font-size: 14px; max-width: 700px; }
+
+/* ============ HOJE ============ */
+.today-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 20px; }
+@media (max-width: 1100px) { .today-grid { grid-template-columns: 1fr; } }
+.panel { background: var(--bg-card); border: 1px solid var(--line); }
+.panel-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.panel-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.panel-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.1em; }
+.panel-body { padding: 8px 0; }
+
+.today-item { padding: 14px 20px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: background 0.15s; }
+.today-item:hover { background: var(--bg-elev); }
+.today-item:last-child { border-bottom: none; }
+.today-check { width: 18px; height: 18px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; margin-top: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.today-check.done { background: var(--green-soft); border-color: var(--green); }
+.today-check.done::after { content: '✓'; color: var(--green); font-size: 12px; font-weight: bold; }
+.today-content { flex: 1; min-width: 0; }
+.today-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+.today-name { font-weight: 500; font-size: 14px; }
+.today-row2 { color: var(--ink-mute); font-size: 12px; }
+
+/* ============ BADGES ============ */
+.tag { display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid; }
+.tag-crit { color: var(--red); border-color: var(--red-soft); background: rgba(196, 69, 54, 0.08); }
+.tag-high { color: var(--amber); border-color: var(--amber-soft); background: rgba(212, 164, 92, 0.08); }
+.tag-med { color: var(--blue); border-color: var(--blue-soft); background: rgba(107, 140, 175, 0.08); }
+.tag-low { color: var(--ink-mute); border-color: var(--line); }
+.tag-done { color: var(--green); border-color: var(--green-soft); background: rgba(125, 141, 106, 0.08); }
+.tag-doing { color: var(--amber); border-color: var(--amber-soft); }
+.tag-pending { color: var(--ink-mute); border-color: var(--line); }
+.tag-marked { color: var(--blue); border-color: var(--blue-soft); }
+.tag-type { color: var(--ink-soft); border-color: var(--line); }
+
+/* ============ ROADMAP ============ */
+.roadmap { margin-top: 20px; padding: 30px 0 30px; position: relative; overflow-x: auto; }
+.roadmap-track { display: flex; gap: 0; min-width: 1100px; position: relative; padding: 0 20px; }
+.roadmap-track::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--line); }
+.milestone { flex: 1; position: relative; padding: 0 8px; }
+.milestone-dot { width: 18px; height: 18px; background: var(--bg-elev); border: 2px solid var(--ink-mute); border-radius: 50%; position: relative; z-index: 2; margin: 0 auto 12px; }
+.milestone.done .milestone-dot { background: var(--green); border-color: var(--green); }
+.milestone.active .milestone-dot { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 0 6px rgba(212, 164, 92, 0.15); }
+.milestone.crit .milestone-dot { background: var(--red); border-color: var(--red); }
+.milestone-date { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); text-align: center; margin-bottom: 6px; letter-spacing: 0.1em; }
+.milestone.active .milestone-date { color: var(--amber); }
+.milestone-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; text-align: center; line-height: 1.2; margin-bottom: 4px; }
+.milestone-desc { font-size: 11px; color: var(--ink-mute); text-align: center; line-height: 1.3; }
+
+.roadmap-legend { display: flex; gap: 24px; padding: 20px; border-top: 1px solid var(--line); margin-top: 30px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.08em; }
+.legend-item { display: flex; align-items: center; gap: 8px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ============ AREAS / KANBAN ============ */
+.areas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+.area-col { background: var(--bg-card); border: 1px solid var(--line); display: flex; flex-direction: column; }
+.area-head { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.area-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; }
+.area-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); background: var(--bg-elev); padding: 2px 7px; }
+.area-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 100px; }
+.card { background: var(--bg-elev); border: 1px solid var(--line); padding: 12px; cursor: pointer; transition: border-color 0.15s; }
+.card:hover { border-color: var(--amber-soft); }
+.card-row1 { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.card-title { font-size: 13px; font-weight: 500; line-height: 1.35; margin-bottom: 6px; }
+.card-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============ DECISÕES ============ */
+.decision-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.decision-item { background: var(--bg-card); border: 1px solid var(--line); border-left: 3px solid var(--amber); padding: 18px 20px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+.decision-item.crit { border-left-color: var(--red); }
+.decision-item.high { border-left-color: var(--amber); }
+.decision-item.med { border-left-color: var(--blue); }
+.decision-q { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; letter-spacing: -0.01em; }
+.decision-meta { display: flex; gap: 12px; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.06em; }
+.decision-actor { color: var(--amber); }
+.decision-side { text-align: right; font-family: 'JetBrains Mono', monospace; }
+.decision-deadline { font-size: 11px; color: var(--ink-soft); }
+.decision-deadline-num { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; color: var(--ink); line-height: 1; margin: 2px 0; }
+
+/* ============ RISCOS ============ */
+.risk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
+.risk-card { background: var(--bg-card); border: 1px solid var(--line); padding: 0; overflow: hidden; }
+.risk-head { padding: 14px 16px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(196,69,54,0.06), transparent); display: flex; align-items: center; gap: 10px; }
+.risk-icon { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 900; color: var(--red); }
+.risk-title { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; line-height: 1.2; }
+.risk-body { padding: 14px 16px; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.risk-impact { padding: 0 16px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.08em; }
+.risk-impact strong { color: var(--red); letter-spacing: 0.1em; }
+.risk-mitigation { padding: 12px 16px; border-top: 1px dashed var(--line); background: var(--bg-elev); }
+.risk-mitigation-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--amber); letter-spacing: 0.15em; margin-bottom: 4px; }
+.risk-mitigation-text { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+
+/* ============ CALENDÁRIO ============ */
+.cal-wrap { margin-top: 20px; }
+.cal-month { margin-bottom: 32px; }
+.cal-month-name { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.02em; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.cal-day-h { background: var(--bg-soft); padding: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
+.cal-day { background: var(--bg-card); min-height: 90px; padding: 8px; position: relative; font-size: 12px; }
+.cal-day.empty { background: var(--bg); }
+.cal-day.today { background: var(--bg-elev); box-shadow: inset 0 0 0 2px var(--amber); }
+.cal-day.past { opacity: 0.5; }
+.cal-day-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.cal-day.today .cal-day-num { color: var(--amber); font-weight: 700; }
+.cal-event { font-size: 10px; padding: 2px 4px; margin-bottom: 2px; line-height: 1.25; border-left: 2px solid var(--amber); padding-left: 4px; color: var(--ink-soft); cursor: pointer; }
+.cal-event.crit { border-left-color: var(--red); color: var(--ink); }
+.cal-event.done { border-left-color: var(--green); opacity: 0.6; text-decoration: line-through; }
+.cal-event:hover { background: var(--bg-elev); }
+
+/* ============ EQUIPE ============ */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 20px; }
+.person { background: var(--bg-card); border: 1px solid var(--line); padding: 16px; }
+.person-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.avatar { width: 40px; height: 40px; background: var(--bg-elev); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: var(--amber); }
+.person-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.person-role { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; }
+.person-load { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-soft); margin-top: 4px; }
+.person-load-bar { height: 3px; background: var(--bg-elev); margin-top: 4px; overflow: hidden; }
+.person-load-fill { height: 100%; background: var(--amber); }
+.person-load-fill.heavy { background: var(--red); }
+.person-tasks { font-size: 12px; color: var(--ink-soft); }
+.person-task { padding: 4px 0; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 8px; }
+.person-task:first-child { border-top: none; }
+.person-task-dot { width: 6px; height: 6px; background: var(--amber); flex-shrink: 0; }
+.person-task-dot.crit { background: var(--red); }
+.person-task-dot.done { background: var(--green); }
+
+/* ============ REUNIÕES ============ */
+.meeting-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+.meeting { background: var(--bg-card); border: 1px solid var(--line); }
+.meeting-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; gap: 16px; align-items: center; }
+.meeting-date-box { background: var(--bg-elev); border: 1px solid var(--line); padding: 8px 14px; text-align: center; min-width: 70px; }
+.meeting-date-day { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; line-height: 1; }
+.meeting-date-mo { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.meeting-info { flex: 1; min-width: 0; }
+.meeting-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; letter-spacing: -0.01em; }
+.meeting-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--amber); letter-spacing: 0.08em; }
+.meeting-body { padding: 14px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .meeting-body { grid-template-columns: 1fr; } }
+.meeting-block-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+.meeting-block-text { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 14px; }
+.meeting-participants { display: flex; flex-wrap: wrap; gap: 5px; }
+.meeting-participant { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 7px; background: var(--bg-elev); border: 1px solid var(--line); color: var(--ink-soft); }
+
+/* ============ CHECKLIST ============ */
+.checklist { margin-top: 20px; }
+.check-section { margin-bottom: 28px; }
+.check-section-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+.check-section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--amber); letter-spacing: 0.1em; }
+.check-section-bar { flex: 1; height: 2px; background: var(--bg-elev); }
+.check-section-fill { height: 100%; background: var(--amber); transition: width 0.3s; }
+.check-section-prog { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute); }
+.check-item { display: flex; align-items: flex-start; gap: 12px; padding: 8px 12px; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
+.check-item:hover { background: var(--bg-card); }
+.check-item.done .check-label { text-decoration: line-through; color: var(--ink-mute); }
+.check-box { width: 16px; height: 16px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+.check-item.done .check-box { background: var(--green-soft); border-color: var(--green); }
+.check-item.done .check-box::after { content: '✓'; color: var(--green); font-size: 10px; font-weight: bold; }
+.check-label { flex: 1; font-size: 13px; line-height: 1.45; }
+.check-due { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); }
+
+/* ============ ENTREGAS ============ */
+.delivery-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--bg-card); border: 1px solid var(--line); }
+.delivery-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); background: var(--bg-soft); }
+.delivery-table td { padding: 12px 14px; border-bottom: 1px solid var(--line-soft); font-size: 13px; vertical-align: top; }
+.delivery-table tr:hover td { background: var(--bg-elev); }
+.delivery-table tr:last-child td { border-bottom: none; }
+
+/* ============ DETAIL MODAL ============ */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--bg-card); border: 1px solid var(--line); max-width: 700px; width: 100%; max-height: 85vh; overflow-y: auto; }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.modal-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+.modal-close { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--ink-mute); padding: 4px 8px; }
+.modal-close:hover { color: var(--ink); }
+.modal-body { padding: 20px 24px; }
+.modal-field { margin-bottom: 16px; }
+.modal-field-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+.modal-field-value { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.modal-actions { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { padding: 8px 14px; border: 1px solid var(--line); background: var(--bg-elev); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; color: var(--ink-soft); }
+.btn:hover { border-color: var(--amber); color: var(--amber); }
+.btn.primary { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+.btn.primary:hover { background: var(--amber-soft); border-color: var(--amber-soft); color: var(--bg); }
+.btn.danger { color: var(--red); }
+.btn.danger:hover { border-color: var(--red); }
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg-elev); }
+::-webkit-scrollbar-thumb:hover { background: var(--line); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .content { padding: 20px; }
+  .topbar { padding: 14px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* ============ EMPTY ============ */
+.empty { text-align: center; padding: 60px 20px; color: var(--ink-mute); }
+.empty-icon { font-family: 'Fraunces', serif; font-size: 60px; font-weight: 900; color: var(--bg-elev); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ====================== SIDEBAR ====================== -->
+  <aside class="sidebar">
+    <div class="slate-header">
+      <div class="slate-tag">SLATE · PRÉ-PRODUÇÃO</div>
+      <div class="slate-title">PROJETO ÔNIX</div>
+      <div class="slate-sub">v1 · maio/jun 2026</div>
+      <div class="slate-sub" style="margin-top:8px;font-style:italic;color:var(--ink-dim);font-size:10px;line-height:1.4;">Nomes fictícios para proteger a identidade dos envolvidos.</div>
+    </div>
+
+    <div class="countdown-box">
+      <div class="countdown-label">FILMAGEM PRINCIPAL</div>
+      <div class="countdown-num" id="countdown-num">—</div>
+      <div class="countdown-unit">DIAS</div>
+      <div class="countdown-target">→ 13–14/JUN/2026</div>
+    </div>
+
+    <nav class="nav-list" id="nav">
+      <div class="nav-section">OPERAÇÃO</div>
+      <div class="nav-item active" data-view="hoje"><span class="num">01</span>Hoje<span class="badge" id="badge-hoje"></span></div>
+      <div class="nav-item" data-view="roadmap"><span class="num">02</span>Roadmap</div>
+      <div class="nav-item" data-view="areas"><span class="num">03</span>Áreas</div>
+      <div class="nav-section">DECISÃO</div>
+      <div class="nav-item" data-view="decisoes"><span class="num">04</span>Decisões<span class="badge warn" id="badge-dec"></span></div>
+      <div class="nav-item" data-view="riscos"><span class="num">05</span>Riscos<span class="badge" id="badge-risk"></span></div>
+      <div class="nav-section">CONTROLE</div>
+      <div class="nav-item" data-view="calendario"><span class="num">06</span>Calendário</div>
+      <div class="nav-item" data-view="equipe"><span class="num">07</span>Equipe</div>
+      <div class="nav-item" data-view="reunioes"><span class="num">08</span>Reuniões</div>
+      <div class="nav-section">EXECUÇÃO</div>
+      <div class="nav-item" data-view="checklist"><span class="num">09</span>Checklist</div>
+      <div class="nav-item" data-view="entregas"><span class="num">10</span>Entregas</div>
+    </nav>
+  </aside>
+
+  <!-- ====================== MAIN ====================== -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbar-title">Hoje</div>
+        <div class="topbar-sub" id="topbar-date">SEXTA, 22 DE MAIO DE 2026</div>
+      </div>
+      <div class="topbar-right">
+        <div class="stat"><div class="stat-num crit" id="stat-crit">0</div><div class="stat-label">Críticos</div></div>
+        <div class="stat"><div class="stat-num warn" id="stat-doing">0</div><div class="stat-label">Em andamento</div></div>
+        <div class="stat"><div class="stat-num" id="stat-pend">0</div><div class="stat-label">Pendentes</div></div>
+        <div class="stat"><div class="stat-num ok" id="stat-done">0</div><div class="stat-label">Concluídos</div></div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- views injected by JS -->
+    </div>
+  </main>
+</div>
+
+<!-- ====================== MODAL ====================== -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal">
+    <!-- injected -->
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DADOS
+// ============================================================
+const TODAY = new Date('2026-05-22'); // fixo para esta versão
+const FILMAGEM = new Date('2026-06-13');
+
+// Áreas com cor e ordem
+const AREAS = [
+  { id: 'contratos',   name: 'Contratos & Jurídico', icon: '§' },
+  { id: 'elenco',      name: 'Elenco & Testes',      icon: '★' },
+  { id: 'locacao',     name: 'Locação (Hostel)',     icon: '◐' },
+  { id: 'figurino',    name: 'Figurino & Adereços',  icon: '◊' },
+  { id: 'equipe',      name: 'Equipe Técnica',       icon: '⌘' },
+  { id: 'logistica',   name: 'Logística & Vinda',    icon: '↗' },
+  { id: 'alimentacao', name: 'Alimentação',          icon: '◯' },
+  { id: 'making',      name: 'Bastidores & Promo',   icon: '▶' },
+  { id: 'controle',    name: 'Controle & Reuniões',  icon: '⊞' },
+];
+
+// Tarefas — extraídas da planilha, normalizadas e enriquecidas
+let TASKS = [
+  // ---------- CONCLUÍDOS ----------
+  { id: 't01', area: 'contratos', type: 'Cobrança', title: 'Contrato do hostel — dados para contrato', date: '17/05', dl: '17/05', who: 'Téo e Nara', owner: 'Téo e Nara', priority: 'crit', status: 'done', agenda: 'Cobrar Éder pelos dados necessários para o contrato com o hostel.', deliverable: 'Dados do contrato recebidos ou pendência formalizada.', next: 'Acionar Éder no privado e registrar retorno.' },
+  { id: 't02', area: 'contratos', type: 'Entrega', title: 'Contrato do hostel — pronto', date: '18/05', dl: '18/05', who: 'Éder / jurídico', owner: 'Éder', priority: 'crit', status: 'done', agenda: 'Finalização/redação do contrato do hostel.', deliverable: 'Contrato pronto para assinatura.', next: 'Confirmar responsável e arquivo final.' },
+  { id: 't03', area: 'elenco', type: 'Reunião', title: 'Teste extra de elenco — marcar reunião', date: '19/05', dl: '19/05', who: 'Marina e Júlia', owner: 'Téo e Nara', priority: 'high', status: 'done', agenda: 'Decidir se haverá novo dia de teste com quem não pôde comparecer; se houver, será online.', deliverable: 'Reunião marcada e decisão encaminhada até 21/05.', next: 'Marcar reunião com Marina e Júlia.' },
+
+  // ---------- EM ANDAMENTO ----------
+  { id: 't04', area: 'figurino', type: 'Reunião', title: 'Figurino, adereços e objetos — reunião', date: '18/05', dl: '18/05', who: 'Lucas, Éder e Manuel', owner: 'Téo e Nara', priority: 'high', status: 'doing', agenda: 'Definir reunião para lista final, acervo, produção, equipe e parcerias.', deliverable: 'Reunião marcada com pauta mínima.', next: 'Confirmar data, horário e participantes.' },
+  { id: 't05', area: 'locacao', type: 'Reunião', title: 'Plano de filmagens / espaços do hostel', date: '20/05', dl: '20/05', who: 'Marina, Éder, Nico, Júlia, Bento, Ivan e Nina', owner: 'Téo e Nara', priority: 'crit', status: 'doing', agenda: 'Entender espaços do hostel, possibilidades de gravação e impactos no plano de filmagens.', deliverable: 'Reunião marcada e pauta enviada.', next: 'Confirmar data, horário, link/local e participantes.' },
+  { id: 't06', area: 'controle', type: 'Controle', title: 'Pontos críticos resolvidos ou encaminhados', date: '21/05', dl: '21/05', who: 'Todos · controle Téo e Nara', owner: 'Téo e Nara', priority: 'crit', status: 'doing', agenda: 'Tudo que for crítico precisa estar resolvido ou encaminhado com status claro.', deliverable: 'Pontos críticos com decisão, responsável, prazo ou status de decisão pendente.', next: 'Fechar relatório de pendências críticas.' },
+  { id: 't07', area: 'elenco', type: 'Cobrança', title: 'Elisa — resolução de disponibilidade', date: '16/05', dl: 'Urgente', who: 'Lucas / Elisa', owner: 'Téo e Nara', priority: 'high', status: 'doing', agenda: 'Cobrar Lucas sobre a resolução com Elisa: passar datas novas, confirmar disponibilidade e adicioná-la ao grupo.', deliverable: 'Status de Elisa definido.', next: 'Cobrar Lucas e registrar retorno.' },
+
+  // ---------- HOJE (22/05) ----------
+  { id: 't08', area: 'contratos', type: 'Entrega', title: 'Contratos — autorização de envio', date: '22/05', dl: '22/05', who: 'Marina', owner: 'Marina', priority: 'crit', status: 'pending', agenda: 'Autorizar envio dos contratos da equipe.', deliverable: 'Envio de contratos autorizado.', next: 'Aguardar autorização de Marina e acionar responsáveis.', decision: true },
+  { id: 't09', area: 'controle', type: 'Reunião', title: 'Reunião geral online — 20h', date: '22/05', time: '20h', dl: '22/05', who: 'Todos · condução Éder e Marcos', owner: 'Éder e Marcos', priority: 'crit', status: 'marked', agenda: 'Apresentação de marketing e ordem do dia.', deliverable: 'Alinhamento geral concluído.', next: 'Confirmar presença geral, link e pauta.', meeting: true },
+
+  // ---------- PRÓXIMOS DIAS ----------
+  { id: 't10', area: 'contratos', type: 'Entrega', title: 'Contrato do hostel — assinado', date: '19/05', dl: '19/05', who: 'Éder / responsáveis', owner: 'Éder', priority: 'crit', status: 'pending', agenda: 'Assinatura do contrato do hostel.', deliverable: 'Contrato assinado e status/comprovante encaminhado.', next: 'Cobrar assinatura e enviar status final.' },
+  { id: 't11', area: 'controle', type: 'Controle', title: 'Agendas gerais — reuniões e demandas', date: '19/05', dl: '19/05', who: 'Téo e Nara', owner: 'Téo e Nara', priority: 'crit', status: 'pending', agenda: 'Todas as reuniões, cobranças e demandas precisam estar marcadas, com datas, horários, participantes acionados e situação registrada.', deliverable: 'Lista consolidada enviada para Marina, Lucas, Marcos ou Camila.', next: 'Consolidar datas, links/locais, participantes e pendências.' },
+  { id: 't12', area: 'logistica', type: 'Reunião', title: 'Vinda de Éder, Marcos e Iris', date: '19/05', dl: '19/05', who: 'Lucas, Marina, Éder, Marcos e Iris', owner: 'Téo e Nara', priority: 'high', status: 'pending', agenda: 'Alinhar vinda, dias de presença e logística.', deliverable: 'Reunião marcada e encaminhamentos definidos.', next: 'Acionar todos e confirmar disponibilidade.' },
+  { id: 't13', area: 'equipe', type: 'Entrega', title: 'Ficha técnica final', date: '21/05', dl: '21/05', who: 'Marina', owner: 'Marina', priority: 'crit', status: 'pending', agenda: 'Definir ficha técnica final com funções.', deliverable: 'Ficha técnica final validada.', next: 'Marina define funções; assistentes registram status.', decision: true },
+  { id: 't14', area: 'elenco', type: 'Cobrança', title: 'Felipe — confirmação de participação', date: '21/05', dl: '21/05', who: 'Felipe / Lucas', owner: 'Téo e Nara', priority: 'high', status: 'pending', agenda: 'Chamar Felipe no privado para saber se participará da produção, quais dias ou se deve ser retirado do grupo.', deliverable: 'Participação e disponibilidade confirmadas ou retirada encaminhada.', next: 'Chamar Felipe e, se necessário, informar Lucas.', decision: true },
+  { id: 't15', area: 'elenco', type: 'Decisão', title: 'Teste extra de elenco — decisão final', date: '21/05', dl: '21/05', who: 'Marina e Júlia', owner: 'Marina e Júlia', priority: 'high', status: 'pending', agenda: 'Decisão final sobre abrir ou não novo dia de teste; se abrir, será online.', deliverable: 'Decisão final registrada.', next: 'Registrar decisão e comunicar encaminhamentos.', decision: true },
+  { id: 't16', area: 'contratos', type: 'Entrega', title: 'Contratos — todos assinados', date: '24/05', dl: '24/05', who: 'Todos os envolvidos', owner: 'Téo e Nara', priority: 'crit', status: 'pending', agenda: 'Todos os contratos precisam estar assinados.', deliverable: 'Lista de assinaturas fechada: assinou / recebeu / pendente.', next: 'Cobrar pendentes e atualizar controle.' },
+  { id: 't17', area: 'controle', type: 'Controle', title: 'Disponibilidade / ordem do dia', date: '25/05', dl: '25/05', who: 'Marcos e Nico', owner: 'Téo e Nara', priority: 'high', status: 'marked', agenda: 'Definir disponibilidade da equipe nas novas datas para fechar ordem do dia mais exata.', deliverable: 'Tabela de disponibilidade fechada.', next: 'Cobrar disponibilidade individual e consolidar por dia.' },
+  { id: 't18', area: 'controle', type: 'Atividade presencial', title: 'Teste de elenco + reunião + teste de equipamento', date: '25/05', time: '13h–22h/23h', dl: '25/05', who: 'Todos indicados', owner: 'Produção', priority: 'crit', status: 'marked', agenda: 'Atividade presencial, inicialmente na casa da Marina. Confirmar local final e lista de presença.', deliverable: 'Teste, reunião e teste de equipamento realizados ou status registrado.', next: 'Confirmar local, presença, equipamentos e pauta.', meeting: true },
+  { id: 't19', area: 'controle', type: 'Controle', title: 'Local final e lista de presença — 25/05', date: '24/05', dl: 'Antes de 25/05', who: 'Produção / todos indicados', owner: 'Produção', priority: 'high', status: 'pending', agenda: 'Confirmar local final e lista de presença para teste de elenco, reunião geral e teste de equipamento.', deliverable: 'Local e lista de presença fechados.', next: 'Checar com Marina/produção e comunicar participantes.' },
+  { id: 't20', area: 'figurino', type: 'Entrega', title: 'Figurino, adereços e objetos — lista final', date: '27/05', dl: '27/05', who: 'Lucas, Éder e Manuel', owner: 'Lucas / Éder / Manuel', priority: 'high', status: 'pending', agenda: 'Lista final precisa estar definida para verificar acervo, produção, equipe e parcerias.', deliverable: 'Lista final definida sem previsão de gasto, priorizando acervo e parcerias.', next: 'Verificar acervo e necessidades restantes.' },
+  { id: 't21', area: 'alimentacao', type: 'Reunião', title: 'Alimentação — reunião marcada', date: '29/05', dl: '29/05', who: 'Marina, Camila, Lucas e Júlia', owner: 'Téo e Nara', priority: 'med', status: 'pending', agenda: 'Definir alimentação para ensaios, reuniões presenciais, captação promocional, filmagem, equipe e elenco.', deliverable: 'Reunião marcada e pauta enviada.', next: 'Marcar reunião e registrar necessidades específicas.' },
+  { id: 't22', area: 'making', type: 'Reunião', title: 'Bastidores / making of / promocional — reunião', date: '29/05', dl: '29/05', who: 'Gabriel, Camila, Nina, Júlia, Éder e Marina', owner: 'Téo e Nara', priority: 'high', status: 'pending', agenda: 'Definir o que será captado, quem capta, quem aparece, dias utilizados e entregas.', deliverable: 'Reunião marcada para acontecer até 01/06.', next: 'Marcar reunião e acionar participantes.' },
+  { id: 't23', area: 'figurino', type: 'Atividade presencial', title: 'Separação final de figurinos e adereços', date: '30 ou 31/05', dl: '31/05', who: 'Lucas e Manuel · apoio produção', owner: 'Téo e Nara', priority: 'high', status: 'pending', agenda: 'Separação presencial final de figurinos e adereços.', deliverable: 'Separação concluída e itens confirmados.', next: 'Definir se será 30/05 ou 31/05 e confirmar local.' },
+  { id: 't24', area: 'making', type: 'Entrega', title: 'Bastidores / making of / promo — plano definido', date: '01/06', dl: '01/06', who: 'Gabriel, Camila, Nina, Júlia, Éder e Marina', owner: 'Produção', priority: 'high', status: 'pending', agenda: 'A reunião precisa ter acontecido e o plano precisa estar definido.', deliverable: 'Plano de conteúdo fechado para apresentação em 04/06.', next: 'Registrar responsáveis, captações e entregas.' },
+  { id: 't25', area: 'controle', type: 'Reunião', title: 'Reunião geral presencial', date: '04/06', dl: '04/06', who: 'Equipe geral definida', owner: 'Produção + Téo e Nara', priority: 'crit', status: 'pending', agenda: 'Últimos detalhes e apresentação do plano de bastidores, making of e promocional.', deliverable: 'Alinhamento final de pré-produção realizado.', next: 'Confirmar presença, local e pauta.', meeting: true },
+  { id: 't26', area: 'elenco', type: 'Ensaio', title: 'Ensaios presenciais', date: '06 e 07/06', dl: '07/06', who: 'Elenco, Marina, Júlia, Camila, Ivan, Nina, Bento, Vera e Nico', owner: 'Direção / produção', priority: 'crit', status: 'pending', agenda: 'Ensaios presenciais apenas com os participantes indicados.', deliverable: 'Ensaios realizados e ajustes registrados.', next: 'Confirmar presença e necessidades de produção.' },
+  { id: 't27', area: 'making', type: 'Captação', title: 'Captação promocional / divulgação', date: '11 e 12/06', dl: '12/06', who: 'Equipe na ficha técnica', owner: 'Produção', priority: 'crit', status: 'pending', agenda: 'Datas reservadas para conteúdo promocional.', deliverable: 'Conteúdo promocional captado.', next: 'Fechar plano de captação, equipamentos e ordem do dia.' },
+  { id: 't28', area: 'controle', type: 'Filmagem', title: 'Filmagem do roteiro na íntegra', date: '13 e 14/06', dl: '14/06', who: 'Equipe na ficha técnica', owner: 'Produção', priority: 'crit', status: 'pending', agenda: 'Datas reservadas para filmagem do roteiro na íntegra.', deliverable: 'Filmagem principal realizada.', next: 'Fechar ordem do dia, logística, elenco, equipe e equipamentos.' },
+  { id: 't29', area: 'equipe', type: 'Controle', title: 'Disponibilidade individual — 11 a 14/06', date: '19/05', dl: 'Consolidar 19/05 · fechar 25/05', who: 'Todos os envolvidos', owner: 'Téo e Nara', priority: 'crit', status: 'pending', agenda: 'Separar quem está disponível para promocional, para roteiro na íntegra e para os dois blocos.', deliverable: 'Tabela de disponibilidade consolidada.', next: 'Cobrar no privado quem não respondeu.' },
+];
+
+// ============================================================
+// DECISÕES PENDENTES (curadoria estratégica)
+// ============================================================
+const DECISIONS = [
+  { id: 'd1', q: 'Felipe participa da produção ou sai do grupo?', actor: 'Felipe / Lucas', deadline: '21/05', impact: 'Sem isso, ficha técnica não fecha.', priority: 'high' },
+  { id: 'd2', q: 'Vai ter teste extra de elenco — sim ou não?', actor: 'Marina e Júlia', deadline: '21/05', impact: 'Decisão atrasa toda a logística de elenco.', priority: 'high' },
+  { id: 'd3', q: 'Ficha técnica final — quem ocupa cada função?', actor: 'Marina', deadline: '21/05', impact: 'Disponibilidade 11–14/06 depende disso.', priority: 'crit' },
+  { id: 'd4', q: 'Marina autoriza o envio dos contratos da equipe?', actor: 'Marina', deadline: '22/05', impact: 'Sem autorização, contratos não saem; 24/05 não fecha.', priority: 'crit' },
+  { id: 'd5', q: 'Separação física de figurinos — 30/05 ou 31/05?', actor: 'Produção', deadline: '27/05', impact: 'Define logística do fim de semana.', priority: 'med' },
+  { id: 'd6', q: 'Local final da atividade presencial de 25/05', actor: 'Marina / Produção', deadline: '24/05', impact: 'Equipe inteira precisa do endereço.', priority: 'high' },
+];
+
+// ============================================================
+// RISCOS CRÍTICOS (travas estruturais)
+// ============================================================
+const RISKS = [
+  { id: 'r1', title: 'Contratos não assinados até 24/05', body: 'A cadeia depende da autorização da Marina (22/05) → envio → assinatura individual. Qualquer atraso compromete o teste presencial de 25/05.', impact: 'BLOQUEIA atividade de 25/05', mitigation: 'Ter plano B: realizar 25/05 mesmo sem 100% assinado, mas com lista de pendentes formalizada.' },
+  { id: 'r2', title: 'Ficha técnica em aberto', body: 'Ficha técnica precisa estar fechada em 21/05, mas depende de várias confirmações (Felipe, Elisa). Sem ficha técnica, disponibilidade 11–14/06 não tem como ser consolidada.', impact: 'BLOQUEIA disponibilidade e ordem do dia', mitigation: 'Fechar ficha mesmo com "TBD" em posições ainda não confirmadas e marcar prazo de substituição.' },
+  { id: 'r3', title: 'Plano de filmagens vs. espaços do hostel', body: 'Sem confirmação dos espaços disponíveis no hostel, o plano de filmagens fica especulativo. Qualquer ajuste tardio impacta equipamento, equipe e ordem do dia.', impact: 'BLOQUEIA ordem do dia detalhada', mitigation: 'Forçar reunião de 20/05 com Nico e Bento. Sair com mapa de cenas × espaços.' },
+  { id: 'r4', title: 'Disponibilidade 11–14/06 fragmentada', body: 'Várias pessoas ainda não responderam. Sem isso, não há como saber quem cobre promocional, quem cobre roteiro, quem cobre os dois.', impact: 'BLOQUEIA ordem do dia e ficha por dia', mitigation: 'Cobrar individualmente no privado até 19/05. Quem não responder até 25/05 entra como indisponível.' },
+  { id: 'r5', title: 'Convergência de demandas em 22/05', body: 'Reunião geral hoje 20h precisa servir para destravar contratos, ordem do dia e ficha técnica. Se a pauta dispersar, perde-se a janela.', impact: 'JANELA ÚNICA — não tem replay', mitigation: 'Éder e Marcos precisam de pauta escrita antes da reunião, com decisões esperadas.' },
+  { id: 'r6', title: 'Bastidores/promocional sem plano', body: 'Reunião marcada para 29/05 e plano fechado até 01/06. Apenas 10 dias entre o plano e a captação (11–12/06). Margem muito apertada.', impact: 'RISCO DE QUALIDADE', mitigation: 'Antecipar pauta de bastidores em paralelo. Não esperar a reunião para começar a pensar.' },
+];
+
+// ============================================================
+// EQUIPE (extraída e enriquecida)
+// ============================================================
+const TEAM = [
+  { name: 'Téo', role: 'Assistente de produção · controle geral', heavy: true },
+  { name: 'Nara',  role: 'Assistente de produção · controle geral', heavy: true },
+  { name: 'Marina', role: 'Direção · decisões estruturais', heavy: true },
+  { name: 'Lucas',    role: 'Produção · figurino/equipe' },
+  { name: 'Éder', role: 'Produção · contratos/hostel', heavy: true },
+  { name: 'Marcos', role: 'Produção · condução de reuniões' },
+  { name: 'Camila', role: 'Produção · alimentação/bastidores' },
+  { name: 'Júlia', role: 'Direção/teste de elenco' },
+  { name: 'Nico',    role: 'Plano de filmagens' },
+  { name: 'Bento',   role: 'Técnico · plano de filmagens' },
+  { name: 'Ivan',    role: 'Técnico · ensaios' },
+  { name: 'Nina',    role: 'Bastidores/making of' },
+  { name: 'Manuel', role: 'Figurino e adereços' },
+  { name: 'Gabriel', role: 'Promocional/divulgação' },
+  { name: 'Iris',     role: 'Equipe · vinda externa' },
+  { name: 'Felipe',  role: 'A confirmar' },
+  { name: 'Elisa',   role: 'A confirmar' },
+  { name: 'Vera',     role: 'Ensaios' },
+];
+
+// ============================================================
+// CHECKLIST PRÉ-FILMAGEM
+// ============================================================
+const CHECKLIST = [
+  { section: 'Contratos & Jurídico', dl: 'Até 24/05', items: [
+    { id: 'c1', label: 'Contrato do hostel assinado por ambas as partes', due: '19/05' },
+    { id: 'c2', label: 'Marina autoriza envio dos contratos da equipe', due: '22/05' },
+    { id: 'c3', label: 'Todos os contratos da equipe assinados', due: '24/05' },
+    { id: 'c4', label: 'Lista de pendentes formalizada (se houver)', due: '24/05' },
+  ]},
+  { section: 'Elenco', dl: 'Até 25/05', items: [
+    { id: 'c5', label: 'Decisão sobre teste extra de elenco', due: '21/05' },
+    { id: 'c6', label: 'Felipe confirma ou sai do grupo', due: '21/05' },
+    { id: 'c7', label: 'Status de Elisa definido', due: 'Urgente' },
+    { id: 'c8', label: 'Teste de elenco presencial realizado', due: '25/05' },
+  ]},
+  { section: 'Equipe Técnica', dl: 'Até 25/05', items: [
+    { id: 'c9', label: 'Ficha técnica final validada por Marina', due: '21/05' },
+    { id: 'c10', label: 'Disponibilidade 11–14/06 consolidada', due: '19/05' },
+    { id: 'c11', label: 'Disponibilidade fechada por dia', due: '25/05' },
+    { id: 'c12', label: 'Teste de equipamento realizado', due: '25/05' },
+  ]},
+  { section: 'Locação', dl: 'Até 04/06', items: [
+    { id: 'c13', label: 'Espaços do hostel mapeados', due: '20/05' },
+    { id: 'c14', label: 'Plano de filmagens × espaços confirmado', due: '20/05' },
+    { id: 'c15', label: 'Vinda de Éder, Marcos e Iris alinhada', due: '19/05' },
+  ]},
+  { section: 'Figurino & Adereços', dl: 'Até 31/05', items: [
+    { id: 'c16', label: 'Reunião de figurino realizada', due: '18/05' },
+    { id: 'c17', label: 'Lista final de figurino e adereços', due: '27/05' },
+    { id: 'c18', label: 'Separação física concluída', due: '31/05' },
+  ]},
+  { section: 'Alimentação', dl: 'Até 04/06', items: [
+    { id: 'c19', label: 'Reunião de alimentação realizada', due: '29/05' },
+    { id: 'c20', label: 'Plano de alimentação por bloco definido', due: '04/06' },
+  ]},
+  { section: 'Bastidores & Promocional', dl: 'Até 04/06', items: [
+    { id: 'c21', label: 'Reunião de bastidores realizada', due: '01/06' },
+    { id: 'c22', label: 'Plano de captação fechado', due: '01/06' },
+    { id: 'c23', label: 'Apresentação na reunião geral presencial', due: '04/06' },
+  ]},
+  { section: 'Ensaios & Captação', dl: 'Até 12/06', items: [
+    { id: 'c24', label: 'Reunião geral presencial', due: '04/06' },
+    { id: 'c25', label: 'Ensaios presenciais', due: '06–07/06' },
+    { id: 'c26', label: 'Ordem do dia da captação promocional', due: '10/06' },
+    { id: 'c27', label: 'Captação promocional realizada', due: '11–12/06' },
+  ]},
+  { section: 'Filmagem Principal', dl: '13–14/06', items: [
+    { id: 'c28', label: 'Ordem do dia da filmagem fechada', due: '12/06' },
+    { id: 'c29', label: 'Logística confirmada (transporte, hospedagem)', due: '12/06' },
+    { id: 'c30', label: 'Equipamentos conferidos', due: '12/06' },
+    { id: 'c31', label: 'Filmagem do roteiro na íntegra', due: '13–14/06' },
+  ]},
+];
+
+// ============================================================
+// STATE & PERSISTÊNCIA
+// ============================================================
+const STORAGE_KEY = 'anhdnd_state_v1';
+let STATE = {
+  taskOverrides: {}, // { taskId: { status: 'done', notes: '...' } }
+  checklistDone: {}, // { itemId: true }
+  riskAck: {}, // { riskId: true }
+};
+
+async function loadState() {
+  try {
+    if (window.storage && window.storage.get) {
+      const res = await window.storage.get(STORAGE_KEY);
+      if (res && res.value) STATE = JSON.parse(res.value);
+    } else if (window.localStorage) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) STATE = JSON.parse(raw);
+    }
+  } catch (e) { console.warn('Estado não carregado, usando default', e); }
+  applyOverrides();
+}
+
+async function saveState() {
+  try {
+    if (window.storage && window.storage.set) {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(STATE));
+    } else if (window.localStorage) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+    }
+  } catch (e) { console.warn('Estado não salvo', e); }
+}
+
+function applyOverrides() {
+  TASKS.forEach(t => {
+    const o = STATE.taskOverrides[t.id];
+    if (o) {
+      if (o.status) t.status = o.status;
+      if (o.notes) t.notes = o.notes;
+    }
+  });
+}
+
+async function setTaskStatus(taskId, status) {
+  if (!STATE.taskOverrides[taskId]) STATE.taskOverrides[taskId] = {};
+  STATE.taskOverrides[taskId].status = status;
+  const t = TASKS.find(x => x.id === taskId);
+  if (t) t.status = status;
+  await saveState();
+  renderAll();
+}
+
+async function toggleCheck(id) {
+  STATE.checklistDone[id] = !STATE.checklistDone[id];
+  await saveState();
+  renderChecklist();
+  renderTopbarStats();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function dateBR(d) {
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`.toUpperCase();
+}
+
+function parseDDMM(s, year=2026) {
+  // accepts '22/05', '13/06', '13 e 14/06', '30 ou 31/05' — returns Date of first valid day
+  if (!s) return null;
+  const m = s.match(/(\d{1,2})[\/ ](\d{1,2})/);
+  if (m) return new Date(year, parseInt(m[2])-1, parseInt(m[1]));
+  // try 'NN/MM'
+  const m2 = s.match(/(\d{1,2})\/(\d{1,2})/);
+  if (m2) return new Date(year, parseInt(m2[2])-1, parseInt(m2[1]));
+  return null;
+}
+
+function daysBetween(a, b) { return Math.round((b - a) / (1000*60*60*24)); }
+
+function isToday(s) {
+  const d = parseDDMM(s);
+  if (!d) return false;
+  return d.toDateString() === TODAY.toDateString();
+}
+
+function isOverdue(s, status) {
+  if (status === 'done') return false;
+  const d = parseDDMM(s);
+  if (!d) return false;
+  return d < TODAY;
+}
+
+function statusLabel(s) {
+  return { done: 'Concluído', doing: 'Em andamento', pending: 'Pendente', marked: 'Marcado' }[s] || s;
+}
+
+function statusTag(s) {
+  return { done: 'tag-done', doing: 'tag-doing', pending: 'tag-pending', marked: 'tag-marked' }[s] || 'tag-pending';
+}
+
+function priorityTag(p) {
+  return { crit: 'tag-crit', high: 'tag-high', med: 'tag-med', low: 'tag-low' }[p] || 'tag-low';
+}
+
+function priorityLabel(p) {
+  return { crit: 'Crítica', high: 'Alta', med: 'Média', low: 'Baixa' }[p] || p;
+}
+
+function areaName(id) { const a = AREAS.find(x => x.id === id); return a ? a.name : id; }
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+const VIEWS = {
+  hoje:       { title: 'Hoje',                   render: renderHoje },
+  roadmap:    { title: 'Roadmap',                render: renderRoadmap },
+  areas:      { title: 'Áreas de produção',      render: renderAreas },
+  decisoes:   { title: 'Decisões pendentes',     render: renderDecisoes },
+  riscos:     { title: 'Riscos críticos',        render: renderRiscos },
+  calendario: { title: 'Calendário',             render: renderCalendario },
+  equipe:     { title: 'Equipe',                 render: renderEquipe },
+  reunioes:   { title: 'Reuniões',               render: renderReunioes },
+  checklist:  { title: 'Checklist pré-filmagem', render: renderChecklist },
+  entregas:   { title: 'Entregas',               render: renderEntregas },
+};
+
+let currentView = 'hoje';
+
+function navigate(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === v));
+  document.getElementById('topbar-title').textContent = VIEWS[v].title;
+  document.getElementById('content').innerHTML = '';
+  VIEWS[v].render();
+}
+
+// ============================================================
+// VIEW: HOJE
+// ============================================================
+function renderHoje() {
+  // hoje + atrasados + crit do dia + reunião de hoje
+  const todayTasks = TASKS.filter(t => isToday(t.date) && t.status !== 'done');
+  const overdue = TASKS.filter(t => isOverdue(t.date, t.status) && t.status !== 'done');
+  const tomorrow = TASKS.filter(t => {
+    const d = parseDDMM(t.date);
+    if (!d) return false;
+    return daysBetween(TODAY, d) >= 1 && daysBetween(TODAY, d) <= 3 && t.status !== 'done';
+  });
+  const meeting = TASKS.find(t => isToday(t.date) && t.meeting);
+
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">PAINEL DO DIA · ${dateBR(TODAY)}</div>
+      <div class="view-title">O que precisa sair hoje.</div>
+      <div class="view-desc">Foco: o mínimo que precisa estar resolvido até o fim do dia para não comprometer o resto da semana. Tudo o que estiver vermelho aqui já está bloqueando algo lá na frente.</div>
+    </div>
+
+    <div class="today-grid">
+      <div>
+        ${meeting ? `
+        <div class="panel" style="margin-bottom: 20px; border-color: var(--amber-soft); background: linear-gradient(180deg, rgba(212,164,92,0.06), var(--bg-card));">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">⊙ Reunião de hoje</div>
+              <div class="panel-tag" style="color: var(--amber);">${meeting.time || ''} · ${statusLabel(meeting.status).toUpperCase()}</div>
+            </div>
+            <button class="btn primary" onclick="openTask('${meeting.id}')">VER PAUTA</button>
+          </div>
+          <div class="panel-body" style="padding: 20px;">
+            <div style="font-family: 'Fraunces', serif; font-size: 19px; font-weight: 700; margin-bottom: 10px;">${meeting.title}</div>
+            <div class="mono" style="color: var(--ink-mute); margin-bottom: 10px;">CONDUÇÃO · ${meeting.owner.toUpperCase()}</div>
+            <div style="color: var(--ink-soft); font-size: 13px; line-height: 1.5;">${meeting.agenda}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        ${overdue.length ? `
+        <div class="panel" style="margin-bottom: 20px; border-left: 3px solid var(--red);">
+          <div class="panel-head">
+            <div class="panel-title" style="color: var(--red);">▲ Atrasadas (${overdue.length})</div>
+            <div class="panel-tag">JÁ VENCIDAS</div>
+          </div>
+          <div class="panel-body">
+            ${overdue.map(renderTodayItem).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        ${todayTasks.length ? `
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">● Demandas de hoje (${todayTasks.filter(t => !t.meeting).length})</div>
+            <div class="panel-tag">${dateBR(TODAY).split(',')[0]}</div>
+          </div>
+          <div class="panel-body">
+            ${todayTasks.filter(t => !t.meeting).map(renderTodayItem).join('') || '<div class="empty"><div class="empty-icon">○</div>Nada pendente para hoje além da reunião.</div>'}
+          </div>
+        </div>
+        ` : ''}
+      </div>
+
+      <div>
+        <div class="panel" style="margin-bottom: 20px;">
+          <div class="panel-head">
+            <div class="panel-title">→ Próximos 3 dias</div>
+            <div class="panel-tag">PREVIEW</div>
+          </div>
+          <div class="panel-body">
+            ${tomorrow.length ? tomorrow.map(renderTodayItem).join('') : '<div class="empty" style="padding: 30px;"><div style="font-size: 13px;">Janela limpa nos próximos 3 dias.</div></div>'}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">⚠ Top 3 travas</div>
+            <div class="panel-tag">SE NÃO SAÍREM, PARA</div>
+          </div>
+          <div class="panel-body" style="padding: 8px 0;">
+            ${RISKS.slice(0, 3).map(r => `
+              <div style="padding: 14px 20px; border-bottom: 1px solid var(--line-soft); cursor: pointer;" onclick="navigate('riscos')">
+                <div style="font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.3;">${r.title}</div>
+                <div class="mono" style="color: var(--red);">→ ${r.impact}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderTodayItem(t) {
+  return `
+    <div class="today-item" onclick="openTask('${t.id}')">
+      <div class="today-check ${t.status === 'done' ? 'done' : ''}" onclick="event.stopPropagation(); setTaskStatus('${t.id}', '${t.status === 'done' ? 'pending' : 'done'}')"></div>
+      <div class="today-content">
+        <div class="today-row1">
+          <span class="today-name">${t.title}</span>
+          <span class="tag ${priorityTag(t.priority)}">${priorityLabel(t.priority)}</span>
+          <span class="tag tag-type">${t.type}</span>
+        </div>
+        <div class="today-row2">
+          <span class="mono">${t.date} · ${areaName(t.area)}</span> · ${t.who}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// VIEW: ROADMAP
+// ============================================================
+function renderRoadmap() {
+  const milestones = [
+    { date: '21/05', title: 'Trava de decisões', desc: 'Felipe · Teste extra · Ficha técnica', status: daysBetween(parseDDMM('21/05'), TODAY) > 0 ? 'past' : 'active' },
+    { date: '22/05', title: 'Reunião geral', desc: '20h · marketing + ordem do dia', status: isToday('22/05') ? 'active' : 'past' },
+    { date: '24/05', title: 'Contratos fechados', desc: 'Todos assinados', status: 'crit' },
+    { date: '25/05', title: 'Atividade presencial', desc: 'Teste + reunião + equipamento', status: 'crit' },
+    { date: '27/05', title: 'Figurino consolidado', desc: 'Lista final', status: 'pending' },
+    { date: '01/06', title: 'Plano de bastidores', desc: 'Captação definida', status: 'pending' },
+    { date: '04/06', title: 'Reunião geral presencial', desc: 'Últimos alinhamentos', status: 'crit' },
+    { date: '06-07/06', title: 'Ensaios presenciais', desc: 'Elenco + direção', status: 'pending' },
+    { date: '11-12/06', title: 'Captação promocional', desc: 'Conteúdo de divulgação', status: 'crit' },
+    { date: '13-14/06', title: 'Filmagem principal', desc: 'Roteiro na íntegra', status: 'crit' },
+  ];
+
+  // Compute active milestone based on date
+  let activeIdx = milestones.findIndex(m => {
+    const d = parseDDMM(m.date);
+    return d && d >= TODAY;
+  });
+
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">ROADMAP · MAIO → JUNHO 2026</div>
+      <div class="view-title">Da decisão à claquete.</div>
+      <div class="view-desc">Os 10 marcos que importam. Cada ponto da timeline é uma janela que, se perdida, força replanejamento. As marcações em vermelho são críticas — não podem deslizar.</div>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-track">
+        ${milestones.map((m, i) => {
+          const cls = i === activeIdx ? 'active' : (m.status === 'crit' ? 'crit' : (m.status === 'past' ? 'done' : ''));
+          return `
+            <div class="milestone ${cls}">
+              <div class="milestone-dot"></div>
+              <div class="milestone-date">${m.date}</div>
+              <div class="milestone-title">${m.title}</div>
+              <div class="milestone-desc">${m.desc}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="roadmap-legend">
+        <div class="legend-item"><div class="legend-dot" style="background: var(--green);"></div>CONCLUÍDO</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--amber);"></div>ATIVO</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--red);"></div>CRÍTICO</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--ink-mute);"></div>PROGRAMADO</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      <div class="panel" style="padding: 18px;">
+        <div class="mono" style="color: var(--ink-mute); margin-bottom: 6px;">HOJE → REUNIÃO GERAL</div>
+        <div class="serif" style="font-size: 28px; font-weight: 700; line-height: 1;">${Math.max(0, daysBetween(TODAY, new Date('2026-05-22T20:00:00')))}<span style="font-size: 14px; color: var(--ink-mute);"> dias</span></div>
+      </div>
+      <div class="panel" style="padding: 18px;">
+        <div class="mono" style="color: var(--ink-mute); margin-bottom: 6px;">HOJE → ATIVIDADE 25/05</div>
+        <div class="serif" style="font-size: 28px; font-weight: 700; line-height: 1; color: ${daysBetween(TODAY, new Date('2026-05-25')) <= 3 ? 'var(--amber)' : 'var(--ink)'};">${daysBetween(TODAY, new Date('2026-05-25'))}<span style="font-size: 14px; color: var(--ink-mute);"> dias</span></div>
+      </div>
+      <div class="panel" style="padding: 18px;">
+        <div class="mono" style="color: var(--ink-mute); margin-bottom: 6px;">HOJE → REUNIÃO PRESENCIAL</div>
+        <div class="serif" style="font-size: 28px; font-weight: 700; line-height: 1;">${daysBetween(TODAY, new Date('2026-06-04'))}<span style="font-size: 14px; color: var(--ink-mute);"> dias</span></div>
+      </div>
+      <div class="panel" style="padding: 18px; border-color: var(--red-soft);">
+        <div class="mono" style="color: var(--red); margin-bottom: 6px;">HOJE → FILMAGEM</div>
+        <div class="serif" style="font-size: 28px; font-weight: 700; line-height: 1; color: var(--red);">${daysBetween(TODAY, FILMAGEM)}<span style="font-size: 14px; color: var(--ink-mute);"> dias</span></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: ÁREAS (KANBAN)
+// ============================================================
+function renderAreas() {
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">PIPELINE POR FRENTE</div>
+      <div class="view-title">Áreas de produção.</div>
+      <div class="view-desc">Tudo organizado por frente. Use para ter conversa por área (com Lucas, com Éder, com Marina) sem misturar contextos.</div>
+    </div>
+
+    <div class="areas-grid">
+      ${AREAS.map(a => {
+        const tasks = TASKS.filter(t => t.area === a.id);
+        const pending = tasks.filter(t => t.status !== 'done').length;
+        return `
+          <div class="area-col">
+            <div class="area-head">
+              <div class="area-name">${a.icon} ${a.name}</div>
+              <div class="area-count">${pending}/${tasks.length}</div>
+            </div>
+            <div class="area-body">
+              ${tasks.length ? tasks.map(t => `
+                <div class="card" onclick="openTask('${t.id}')">
+                  <div class="card-row1">
+                    <span class="tag ${priorityTag(t.priority)}">${priorityLabel(t.priority)}</span>
+                    <span class="tag ${statusTag(t.status)}">${statusLabel(t.status)}</span>
+                  </div>
+                  <div class="card-title">${t.title}</div>
+                  <div class="card-meta">
+                    <span>◷ ${t.dl}</span>
+                    <span>· ${t.owner}</span>
+                  </div>
+                </div>
+              `).join('') : '<div class="empty" style="padding: 30px 10px;"><div style="font-size: 12px; color: var(--ink-mute);">Sem demandas.</div></div>'}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: DECISÕES
+// ============================================================
+function renderDecisoes() {
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">PAINEL DE DECISÕES</div>
+      <div class="view-title">O que está esperando uma resposta.</div>
+      <div class="view-desc">São perguntas que dependem de uma pessoa específica. Cada decisão pendente trava uma cadeia inteira de demandas. Use esta tela como roteiro de cobrança individual.</div>
+    </div>
+
+    <div class="decision-list">
+      ${DECISIONS.map(d => `
+        <div class="decision-item ${d.priority}">
+          <div>
+            <div class="decision-q">${d.q}</div>
+            <div class="decision-meta">
+              <span class="decision-actor">→ ${d.actor.toUpperCase()}</span>
+              <span>· ${d.impact}</span>
+            </div>
+          </div>
+          <div class="decision-side">
+            <div class="decision-deadline">prazo</div>
+            <div class="decision-deadline-num">${d.deadline}</div>
+            <div class="mono" style="color: var(--ink-mute);">${priorityLabel(d.priority).toUpperCase()}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="panel" style="margin-top: 32px;">
+      <div class="panel-head">
+        <div class="panel-title">Como usar este painel</div>
+      </div>
+      <div style="padding: 18px 20px; color: var(--ink-soft); font-size: 13px; line-height: 1.6;">
+        Em reuniões, abra este painel. Cada item é uma pergunta direta para uma pessoa. Não saia da reunião sem registrar a decisão tomada — ou um próximo passo claro com prazo. Decisões soltas viram caos.
+      </div>
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: RISCOS
+// ============================================================
+function renderRiscos() {
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">RISCOS · ZONA VERMELHA</div>
+      <div class="view-title">Travas estruturais.</div>
+      <div class="view-desc">Estes são os pontos que, se não saírem, derrubam toda a pré-produção. Não são tarefas — são pontos de falha sistêmica. Toda reunião deveria começar por aqui.</div>
+    </div>
+
+    <div class="risk-grid">
+      ${RISKS.map(r => `
+        <div class="risk-card">
+          <div class="risk-head">
+            <div class="risk-icon">${r.id.replace('r','')}</div>
+            <div class="risk-title">${r.title}</div>
+          </div>
+          <div class="risk-body">${r.body}</div>
+          <div class="risk-impact"><strong>IMPACTO:</strong> ${r.impact}</div>
+          <div class="risk-mitigation">
+            <div class="risk-mitigation-label">PLANO DE MITIGAÇÃO</div>
+            <div class="risk-mitigation-text">${r.mitigation}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: CALENDÁRIO
+// ============================================================
+function renderCalendario() {
+  const months = [
+    { name: 'Maio 2026', year: 2026, month: 4, firstDay: 5 }, // sex
+    { name: 'Junho 2026', year: 2026, month: 5, firstDay: 1 }, // seg
+  ];
+
+  let monthsHtml = months.map(m => {
+    const lastDay = new Date(m.year, m.month + 1, 0).getDate();
+    const cells = [];
+    // empty cells
+    const startOffset = (m.firstDay - 1 + 7) % 7;
+    for (let i = 0; i < startOffset; i++) cells.push({ empty: true });
+    for (let d = 1; d <= lastDay; d++) {
+      const dStr = String(d).padStart(2, '0') + '/' + String(m.month + 1).padStart(2, '0');
+      const dayDate = new Date(m.year, m.month, d);
+      const events = TASKS.filter(t => {
+        const td = parseDDMM(t.date, m.year);
+        return td && td.getDate() === d && td.getMonth() === m.month;
+      });
+      cells.push({ d, dStr, date: dayDate, events });
+    }
+
+    return `
+      <div class="cal-month">
+        <div class="cal-month-name">${m.name}</div>
+        <div class="cal-grid">
+          ${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x => `<div class="cal-day-h">${x}</div>`).join('')}
+          ${cells.map(c => {
+            if (c.empty) return '<div class="cal-day empty"></div>';
+            const isT = c.date.toDateString() === TODAY.toDateString();
+            const isPast = c.date < TODAY && !isT;
+            return `
+              <div class="cal-day ${isT ? 'today' : ''} ${isPast ? 'past' : ''}">
+                <div class="cal-day-num">${c.dStr}</div>
+                ${c.events.map(e => `
+                  <div class="cal-event ${e.priority === 'crit' ? 'crit' : ''} ${e.status === 'done' ? 'done' : ''}" onclick="openTask('${e.id}')" title="${e.title}">
+                    ${e.time ? `<span class="mono" style="color: var(--amber);">${e.time}</span> · ` : ''}${e.title}
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">CALENDÁRIO · MAI → JUN 2026</div>
+      <div class="view-title">Visão temporal completa.</div>
+      <div class="view-desc">Cada evento clicável vai para o detalhamento. Cores: vermelho = crítico, amarelo = padrão, riscado = concluído.</div>
+    </div>
+    ${monthsHtml}
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: EQUIPE
+// ============================================================
+function renderEquipe() {
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">FICHA DE EQUIPE</div>
+      <div class="view-title">Responsáveis.</div>
+      <div class="view-desc">Carga de trabalho real por pessoa. Quem tem barra cheia está sobrecarregado e precisa de apoio. Em vermelho: nó crítico da produção.</div>
+    </div>
+
+    <div class="team-grid">
+      ${TEAM.map(p => {
+        // count tasks where person is owner or in `who`
+        const tasks = TASKS.filter(t => {
+          if (t.status === 'done') return false;
+          return (t.owner && t.owner.toLowerCase().includes(p.name.toLowerCase())) ||
+                 (t.who && t.who.toLowerCase().includes(p.name.toLowerCase()));
+        });
+        const load = Math.min(100, tasks.length * 12);
+        const initials = p.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+        return `
+          <div class="person">
+            <div class="person-head">
+              <div class="avatar">${initials}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="person-name">${p.name}</div>
+                <div class="person-role">${p.role}</div>
+                <div class="person-load">${tasks.length} demanda${tasks.length === 1 ? '' : 's'} ativa${tasks.length === 1 ? '' : 's'}</div>
+                <div class="person-load-bar"><div class="person-load-fill ${p.heavy || load > 60 ? 'heavy' : ''}" style="width: ${load}%;"></div></div>
+              </div>
+            </div>
+            <div class="person-tasks">
+              ${tasks.slice(0, 4).map(t => `
+                <div class="person-task" onclick="openTask('${t.id}')" style="cursor: pointer;">
+                  <div class="person-task-dot ${t.priority === 'crit' ? 'crit' : ''} ${t.status === 'done' ? 'done' : ''}"></div>
+                  <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.title}</span>
+                  <span class="mono" style="color: var(--ink-mute);">${t.date}</span>
+                </div>
+              `).join('') || '<div style="color: var(--ink-mute); font-size: 11px; padding: 4px 0;">Sem demandas ativas.</div>'}
+              ${tasks.length > 4 ? `<div class="mono" style="color: var(--ink-mute); padding: 4px 0; font-size: 10px;">+ ${tasks.length - 4} demanda${tasks.length - 4 === 1 ? '' : 's'}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: REUNIÕES
+// ============================================================
+function renderReunioes() {
+  const meetings = TASKS.filter(t => t.type === 'Reunião' || t.meeting || t.type === 'Atividade presencial');
+  meetings.sort((a, b) => {
+    const da = parseDDMM(a.date), db = parseDDMM(b.date);
+    if (!da) return 1; if (!db) return -1;
+    return da - db;
+  });
+
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">PAINEL DE REUNIÕES</div>
+      <div class="view-title">Para conduzir cada conversa.</div>
+      <div class="view-desc">Cada bloco abaixo é um roteiro pronto: data, participantes, pauta e o que precisa sair de decisão. Não entre em reunião sem isso preparado.</div>
+    </div>
+
+    <div class="meeting-list">
+      ${meetings.map(m => {
+        const d = parseDDMM(m.date);
+        const day = d ? d.getDate() : '?';
+        const mo = d ? ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'][d.getMonth()] : '';
+        const participants = (m.who || '').split(/,| e | · |\//).map(x => x.trim()).filter(Boolean);
+        return `
+          <div class="meeting" id="meeting-${m.id}">
+            <div class="meeting-head">
+              <div class="meeting-date-box">
+                <div class="meeting-date-day">${m.date.match(/^\d{2}/) ? m.date.slice(0,2) : day}</div>
+                <div class="meeting-date-mo">${mo}</div>
+              </div>
+              <div class="meeting-info">
+                <div class="meeting-title">${m.title}</div>
+                <div class="meeting-time">${m.time ? m.time + ' · ' : ''}${statusLabel(m.status)} · ${m.owner.toUpperCase()}</div>
+              </div>
+              <span class="tag ${priorityTag(m.priority)}">${priorityLabel(m.priority)}</span>
+            </div>
+            <div class="meeting-body">
+              <div>
+                <div class="meeting-block-label">PAUTA</div>
+                <div class="meeting-block-text">${m.agenda}</div>
+                <div class="meeting-block-label">PARTICIPANTES</div>
+                <div class="meeting-participants">${participants.map(p => `<span class="meeting-participant">${p}</span>`).join('')}</div>
+              </div>
+              <div>
+                <div class="meeting-block-label">DECISÃO ESPERADA</div>
+                <div class="meeting-block-text">${m.deliverable}</div>
+                <div class="meeting-block-label">PRÓXIMO PASSO</div>
+                <div class="meeting-block-text">${m.next}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: CHECKLIST
+// ============================================================
+function renderChecklist() {
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">CHECKLIST PRÉ-FILMAGEM</div>
+      <div class="view-title">O que precisa estar fechado até 12/06.</div>
+      <div class="view-desc">Esta é a versão hierárquica e enxuta. Cada seção é uma frente de pré-produção. A barra mostra progresso real. Marque conforme conclui.</div>
+    </div>
+
+    <div class="checklist">
+      ${CHECKLIST.map(section => {
+        const total = section.items.length;
+        const done = section.items.filter(i => STATE.checklistDone[i.id]).length;
+        const pct = Math.round(done / total * 100);
+        return `
+          <div class="check-section">
+            <div class="check-section-title">
+              <span class="check-section-num">${String(CHECKLIST.indexOf(section) + 1).padStart(2, '0')}</span>
+              <span>${section.section}</span>
+              <span class="check-section-bar"><span class="check-section-fill" style="width: ${pct}%;"></span></span>
+              <span class="check-section-prog">${done}/${total}</span>
+              <span class="mono" style="color: var(--ink-mute);">· ${section.dl}</span>
+            </div>
+            ${section.items.map(i => `
+              <div class="check-item ${STATE.checklistDone[i.id] ? 'done' : ''}" onclick="toggleCheck('${i.id}')">
+                <div class="check-box"></div>
+                <div class="check-label">${i.label}</div>
+                <div class="check-due">${i.due}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// VIEW: ENTREGAS
+// ============================================================
+function renderEntregas() {
+  const deliveries = TASKS.filter(t => t.type === 'Entrega' || t.type === 'Captação' || t.type === 'Filmagem' || t.type === 'Ensaio');
+  deliveries.sort((a, b) => {
+    const da = parseDDMM(a.date), db = parseDDMM(b.date);
+    if (!da) return 1; if (!db) return -1;
+    return da - db;
+  });
+
+  const html = `
+    <div class="view-header">
+      <div class="view-tag">ACOMPANHAMENTO DE ENTREGAS</div>
+      <div class="view-title">O que precisa ser produzido.</div>
+      <div class="view-desc">Lista linear de tudo que é entregável (não reuniões, não controles). Use como termômetro de produção real.</div>
+    </div>
+
+    <table class="delivery-table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">Status</th>
+          <th>Entrega</th>
+          <th style="width: 110px;">Prazo</th>
+          <th>Responsável</th>
+          <th style="width: 90px;">Prioridade</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${deliveries.map(t => `
+          <tr style="cursor: pointer;" onclick="openTask('${t.id}')">
+            <td><span class="tag ${statusTag(t.status)}">${statusLabel(t.status)}</span></td>
+            <td>
+              <div style="font-weight: 500;">${t.title}</div>
+              <div class="mono" style="color: var(--ink-mute); margin-top: 2px;">${areaName(t.area).toUpperCase()}</div>
+            </td>
+            <td><span class="mono">${t.dl}</span></td>
+            <td>${t.owner}</td>
+            <td><span class="tag ${priorityTag(t.priority)}">${priorityLabel(t.priority)}</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============================================================
+// MODAL DE TAREFA
+// ============================================================
+function openTask(id) {
+  const t = TASKS.find(x => x.id === id);
+  if (!t) return;
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+          <span class="tag ${priorityTag(t.priority)}">${priorityLabel(t.priority)}</span>
+          <span class="tag ${statusTag(t.status)}">${statusLabel(t.status)}</span>
+          <span class="tag tag-type">${t.type}</span>
+          <span class="tag tag-type">${areaName(t.area).toUpperCase()}</span>
+        </div>
+        <div class="modal-title">${t.title}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×&nbsp;FECHAR</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <div class="modal-field-label">DATA / JANELA</div>
+        <div class="modal-field-value">${t.date}${t.time ? ' · ' + t.time : ''} · prazo: ${t.dl}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">PARTICIPANTES / RESPONSÁVEIS</div>
+        <div class="modal-field-value">${t.who}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">RESPONSÁVEL PELO CONTROLE</div>
+        <div class="modal-field-value">${t.owner}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">PAUTA / O QUE SERÁ TRATADO</div>
+        <div class="modal-field-value">${t.agenda}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">ENTREGA / DECISÃO ESPERADA</div>
+        <div class="modal-field-value">${t.deliverable}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">PRÓXIMO PASSO</div>
+        <div class="modal-field-value">${t.next}</div>
+      </div>
+      ${t.notes ? `<div class="modal-field"><div class="modal-field-label">SUAS OBSERVAÇÕES</div><div class="modal-field-value">${t.notes}</div></div>` : ''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn ${t.status === 'done' ? '' : 'primary'}" onclick="setTaskStatus('${t.id}', 'done'); closeModal();">✓ Marcar concluído</button>
+      <button class="btn" onclick="setTaskStatus('${t.id}', 'doing'); closeModal();">● Em andamento</button>
+      <button class="btn" onclick="setTaskStatus('${t.id}', 'pending'); closeModal();">○ Pendente</button>
+      <button class="btn" onclick="setTaskStatus('${t.id}', 'marked'); closeModal();">◐ Marcado</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+}
+
+// ============================================================
+// TOPBAR STATS
+// ============================================================
+function renderTopbarStats() {
+  const crit = TASKS.filter(t => t.priority === 'crit' && t.status !== 'done').length;
+  const doing = TASKS.filter(t => t.status === 'doing').length;
+  const pend = TASKS.filter(t => t.status === 'pending' || t.status === 'marked').length;
+  const done = TASKS.filter(t => t.status === 'done').length;
+  document.getElementById('stat-crit').textContent = crit;
+  document.getElementById('stat-doing').textContent = doing;
+  document.getElementById('stat-pend').textContent = pend;
+  document.getElementById('stat-done').textContent = done;
+
+  // sidebar badges
+  const todayCount = TASKS.filter(t => (isToday(t.date) || isOverdue(t.date, t.status)) && t.status !== 'done').length;
+  const decCount = DECISIONS.length;
+  const riskCount = RISKS.length;
+  document.getElementById('badge-hoje').textContent = todayCount || '';
+  document.getElementById('badge-dec').textContent = decCount || '';
+  document.getElementById('badge-risk').textContent = riskCount || '';
+  document.getElementById('badge-hoje').style.display = todayCount ? 'inline' : 'none';
+  document.getElementById('badge-dec').style.display = decCount ? 'inline' : 'none';
+  document.getElementById('badge-risk').style.display = riskCount ? 'inline' : 'none';
+
+  // countdown
+  const days = daysBetween(TODAY, FILMAGEM);
+  document.getElementById('countdown-num').textContent = days;
+
+  // top date
+  document.getElementById('topbar-date').textContent = dateBR(TODAY);
+}
+
+function renderAll() {
+  renderTopbarStats();
+  VIEWS[currentView].render();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.querySelectorAll('.nav-item').forEach(i => {
+  i.addEventListener('click', () => navigate(i.dataset.view));
+});
+document.getElementById('modal-bg').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-bg') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+window.setTaskStatus = setTaskStatus;
+window.toggleCheck = toggleCheck;
+window.openTask = openTask;
+window.closeModal = closeModal;
+window.navigate = navigate;
+
+(async () => {
+  await loadState();
+  renderAll();
+})();
+</script>
+</body>
+</html>

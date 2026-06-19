@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playbook — Futebol Americano</title>
+<style>html,body{margin:0;padding:0;background:#0e0e12;}</style>
+<script src="../vendor/react.js"></script>
+<script src="../vendor/react-dom.js"></script>
+</head><body><div id="root"></div>
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useReducer
+} = React;
+const G = {
+  bg: "#0e0e12",
+  s: "#16161e",
+  s2: "#1e1e2a",
+  au: "#c9a227",
+  aul: "rgba(201,162,39,0.18)",
+  aub: "rgba(201,162,39,0.08)",
+  bl: "#5b9bd5",
+  rd: "#d45b5b",
+  gr: "#5daf6c",
+  am: "#e0a030",
+  tx: "#e4dcc8",
+  mu: "#7a7060",
+  mu2: "#a09080",
+  sr: "Georgia,'Times New Roman',serif",
+  mo: "'Courier New',Courier,monospace"
+};
+const POS = {
+  offense: [{
+    abbr: "QB",
+    name: "Quarterback",
+    rpg: "Mago",
+    role: "Comanda tudo. Lê a defesa e decide onde a bola vai.",
+    detail: "Recebe o snap e escolhe: passa, corre ou entrega. Zanon é o QB do time — fã de jogar pro backside. Tudo começa nele.",
+    stats: {
+      Força: 3,
+      Velocidade: 6,
+      Leitura: 10
+    }
+  }, {
+    abbr: "RB",
+    name: "Running Back",
+    rpg: "Guerreiro",
+    role: "Corre com a bola — ou bloqueia como Lead.",
+    detail: "No modo Lead, é o guarda-costas: vai direto no DE do playside. JP e Laurentino são os RBs do time — ótimos com a bola, fracos no 1x1.",
+    stats: {
+      Força: 7,
+      Velocidade: 8,
+      Leitura: 5
+    }
+  }, {
+    abbr: "WR",
+    name: "Wide Receiver",
+    rpg: "Ladrão",
+    role: "Receptor aberto. Velocidade, rotas, pega passes.",
+    detail: "Henry é o WR mais rápido. Corre Jet Sweep, Slant, Wheel, Hitch, Corner... O CB tem que ficar grudado nele.",
+    stats: {
+      Força: 4,
+      Velocidade: 10,
+      Leitura: 6
+    }
+  }, {
+    abbr: "TE",
+    name: "Tight End",
+    rpg: "Paladino",
+    role: "Bloqueia E recebe passes. Define o lado Lucky/Ringo.",
+    detail: "Híbrido poderoso. Onde o TE alinha, o Mike LB declara a força. TE à esquerda = Lucky. TE à direita = Ringo.",
+    stats: {
+      Força: 8,
+      Velocidade: 5,
+      Leitura: 6
+    }
+  }, {
+    abbr: "C",
+    name: "Center",
+    rpg: "Ferreiro",
+    role: "Faz o snap. Âncora e comunicador da linha.",
+    detail: "Inicia cada jogada entregando a bola pro QB. Coordena os bloqueios internos com os guards.",
+    stats: {
+      Força: 8,
+      Velocidade: 3,
+      Leitura: 7
+    }
+  }, {
+    abbr: "T",
+    name: "Tackle (LT/RT)",
+    rpg: "Tanque",
+    role: "Extremos da linha. Protegem as laterais do QB.",
+    detail: "Os maiores da linha. Protegem o QB de rushers pelas bordas, especialmente contra os Defensive Ends.",
+    stats: {
+      Força: 10,
+      Velocidade: 3,
+      Leitura: 5
+    }
+  }, {
+    abbr: "G",
+    name: "Guard (LG/RG)",
+    rpg: "Guardião",
+    role: "Bloqueadores internos. Protegem o centro.",
+    detail: "Ao lado do center. Junto com os tackles, formam a muralha que dá tempo pro QB jogar.",
+    stats: {
+      Força: 9,
+      Velocidade: 3,
+      Leitura: 5
+    }
+  }],
+  defense: [{
+    abbr: "E",
+    name: "Defensive End",
+    rpg: "Berserker",
+    role: "Extremos da linha. Persegue o QB pelas bordas.",
+    detail: "Controla o C-gap. No Jet Sweep, é exatamente quem o RB (Lead) vai bloquear. Se ele passar, a jogada funciona.",
+    stats: {
+      Força: 9,
+      Velocidade: 7,
+      Leitura: 5
+    }
+  }, {
+    abbr: "N",
+    name: "Nose Tackle",
+    rpg: "Colosso",
+    role: "Centro da linha. Ocupa dois bloqueadores ao mesmo tempo.",
+    detail: "Posição 0 — em cima do center. Usa Blast Technique no 55, Slash/Wiz no Stack. Objetivo: destruir o meio do campo.",
+    stats: {
+      Força: 10,
+      Velocidade: 3,
+      Leitura: 5
+    }
+  }, {
+    abbr: "M",
+    name: "Mike LB",
+    rpg: "Capitão",
+    role: "LB do meio. Declara Lucky/Ringo. Comanda a defesa.",
+    detail: "É quem grita Lucky ou Ringo antes do snap. Lê o backfield e se ajusta pelo fluxo. Líder do segundo nível.",
+    stats: {
+      Força: 7,
+      Velocidade: 7,
+      Leitura: 9
+    }
+  }, {
+    abbr: "B",
+    name: "Buck LB",
+    rpg: "Caçador",
+    role: "LB do lado forte. Pressiona e cobre.",
+    detail: "Pode fazer blitz em qualquer front. Responde por dois gaps dependendo do fluxo da jogada.",
+    stats: {
+      Força: 7,
+      Velocidade: 7,
+      Leitura: 7
+    }
+  }, {
+    abbr: "W",
+    name: "Will LB",
+    rpg: "Ranger",
+    role: "LB do lado fraco. Cobre o backside.",
+    detail: "Cobre o lado oposto à força. Pode blitzar ou cobrir passe. No 2-minute drill, fique de olho no RB fazendo wheel.",
+    stats: {
+      Força: 6,
+      Velocidade: 8,
+      Leitura: 8
+    }
+  }, {
+    abbr: "R",
+    name: "Rover",
+    rpg: "Espião",
+    role: "Híbrido LB/Safety. Versátil, aparece no Rover Blitz.",
+    detail: "Pode Set Edge em corridas ou cobrir passe. No Angle front, aparece como Roger. Imprevisível.",
+    stats: {
+      Força: 6,
+      Velocidade: 8,
+      Leitura: 8
+    }
+  }, {
+    abbr: "D",
+    name: "Dog",
+    rpg: "Lobo",
+    role: "Similar ao Rover. Blitza ou cobre conforme a formação.",
+    detail: "No Dog Blitz, vem de ângulo surpresa. No Stack e 55, faz Set Edge como o Rover.",
+    stats: {
+      Força: 6,
+      Velocidade: 8,
+      Leitura: 7
+    }
+  }, {
+    abbr: "CB",
+    name: "Cornerback",
+    rpg: "Duelista",
+    role: "Marca o WR em 1x1. Guardião das laterais.",
+    detail: "Na Smash, o CB decide qual passe acontece. Fechou no hitch = QB joga corner. Ficou fundo = QB joga hitch. Ele controla.",
+    stats: {
+      Força: 5,
+      Velocidade: 9,
+      Leitura: 8
+    }
+  }, {
+    abbr: "FS",
+    name: "Free Safety",
+    rpg: "Vigia",
+    role: "Último da defesa. Lê o jogo e quebra passes.",
+    detail: "Fica mais fundo. No Cover 2 e 3, cobre zonas atrás dos LBs. É quem salva jogadas que escapam dos outros.",
+    stats: {
+      Força: 5,
+      Velocidade: 8,
+      Leitura: 10
+    }
+  }]
+};
+const GLOS = [{
+  term: "Snap",
+  cat: "Geral",
+  def: "O center passa a bola pro QB entre as pernas. A jogada começa."
+}, {
+  term: "Huddle",
+  cat: "Geral",
+  def: "Reunião do time antes do snap. QB fala a jogada em segredo. Não existe no 2-minute drill."
+}, {
+  term: "2-Minute Drill",
+  cat: "Geral",
+  def: "Modo de urgência no fim do tempo. Sem huddle — tudo via sinais de mão pré-combinados."
+}, {
+  term: "Down",
+  cat: "Geral",
+  def: "Tentativa. O ataque tem 4 downs pra avançar 10 jardas. Se conseguir, renova as 4 tentativas."
+}, {
+  term: "Turnover",
+  cat: "Geral",
+  def: "Troca de posse. Interceptação ou fumble. Cada 3 turnovers = 25% das chances de pontuar eliminadas."
+}, {
+  term: "Playside",
+  cat: "Geral",
+  def: "O lado pra onde a jogada principal vai. Onde a ação está."
+}, {
+  term: "Backside",
+  cat: "Geral",
+  def: "Lado oposto à jogada. Zanon é fã de olhar pro backside antes de jogar."
+}, {
+  term: "Motion",
+  cat: "Ataque",
+  def: "Movimento pré-snap de um jogador. Henry em motion lateral = sinal de Jet Sweep ou Jet Bubble."
+}, {
+  term: "Lead",
+  cat: "Ataque",
+  def: "RB bloqueia em vez de correr. Sem tag na jogada = sempre Lead. Foco: ombro de fora do DE do playside."
+}, {
+  term: "RPO",
+  cat: "Ataque",
+  def: "Run-Pass Option. QB lê a defesa em tempo real: ou entrega pra corrida, ou joga o passe."
+}, {
+  term: "Jet Sweep",
+  cat: "Ataque",
+  def: "WR (Henry) entra em motion e recebe handoff correndo lateralmente. É uma varrida real."
+}, {
+  term: "Jet Bubble",
+  cat: "Ataque",
+  def: "RPO: QB entrega pro Jet Sweep OU joga Bubble Screen. A defesa escolhe qual jogada acontece."
+}, {
+  term: "BOB",
+  cat: "Ataque",
+  def: "Big on Big. Cada lineman ofensivo bloqueia o lineman defensivo à sua frente. Sem ajuda, sem troca."
+}, {
+  term: "ROT",
+  cat: "Ataque",
+  def: "O RB vai bloquear um rusher. O lineman pode ignorar esse cara e focar em outro."
+}, {
+  term: "Jailbreak Screen",
+  cat: "Ataque",
+  def: "Passe rápido de tela com múltiplos bloqueadores na frente. Bola em espaço aberto."
+}, {
+  term: "Blitz",
+  cat: "Defesa",
+  def: "LB abandona a cobertura e vai pressionar o QB. Fire no playbook do time."
+}, {
+  term: "Lucky",
+  cat: "Defesa",
+  def: "Chamada do Mike LB: força declarada pra esquerda. TE à esquerda ou campo equilibrado."
+}, {
+  term: "Ringo",
+  cat: "Defesa",
+  def: "Chamada do Mike LB: força declarada pra direita. TE à direita."
+}, {
+  term: "Cover 2 (Blue)",
+  cat: "Defesa",
+  def: "2 safeties no fundo (2 zonas), 5 jogadores no curto. Vulnerável no meio fundo."
+}, {
+  term: "Cover 3 (Green)",
+  cat: "Defesa",
+  def: "3 jogadores fundo (3 zonas), 4 no curto. Cobertura equilibrada."
+}, {
+  term: "Cover 4 (Orange)",
+  cat: "Defesa",
+  def: "4 jogadores fundo (4 zonas). Defende bem passes profundos. Vulnerável no curto/médio."
+}, {
+  term: "Cover 2 Man (Silver)",
+  cat: "Defesa",
+  def: "2 safeties fundo + marcação individual (man) nos receptores. Mais agressivo."
+}, {
+  term: "Gap A",
+  cat: "Defesa",
+  def: "Espaço entre os dois guards e o center. Zona interna central."
+}, {
+  term: "Gap B",
+  cat: "Defesa",
+  def: "Espaço entre guard e tackle. Zona interna lateral."
+}, {
+  term: "Gap C",
+  cat: "Defesa",
+  def: "Espaço entre tackle e tight end (ou além do tackle). Zona externa."
+}, {
+  term: "Pinch",
+  cat: "Defesa",
+  def: "Stunt da linha: jogadores se movem pra dentro, comprimindo os gaps internos."
+}, {
+  term: "Contain",
+  cat: "Defesa",
+  def: "Stunt onde os ends mantêm contenção externa. QB não escapa pelas bordas."
+}, {
+  term: "Slash",
+  cat: "Defesa",
+  def: "Stunt: DL corta diagonalmente pro gap. Movimento de surpresa."
+}, {
+  term: "Wiz",
+  cat: "Defesa",
+  def: "Stunt específico: distribuição diferente de responsabilidade de gap."
+}, {
+  term: "Slant",
+  cat: "Rotas",
+  def: "2-3 passos retos e corte diagonal pra dentro. Rápida contra man-to-man."
+}, {
+  term: "Hitch",
+  cat: "Rotas",
+  def: "Receptor sai, para e vira pro QB. Rota curta. DG errou no Fall Game e gerou INT."
+}, {
+  term: "Corner",
+  cat: "Rotas",
+  def: "Diagonal pro canto do campo, fundo. Jogada 57 usa essa rota pro RB rápido."
+}, {
+  term: "Wheel",
+  cat: "Rotas",
+  def: "Começa no flat e sobe verticalmente fundo. Não abra cedo — ele vai subir."
+}, {
+  term: "Swing",
+  cat: "Rotas",
+  def: "RB vai pro flat em curva. Passe curto em espaço aberto."
+}, {
+  term: "Bubble Screen",
+  cat: "Rotas",
+  def: "Receptor recua, recebe passe curto e corre com bloqueadores na frente."
+}, {
+  term: "Smash",
+  cat: "Rotas",
+  def: "Hitch (curto) + Corner (fundo) do mesmo lado. QB lê o CB. CB decide qual passe acontece."
+}, {
+  term: "Pick Route",
+  cat: "Rotas",
+  def: "Duas rotas cruzadas — uma barra o defensor da outra. A wheel passa por baixo da slant."
+}];
+const QUIZ = [{
+  q: "O TE está à esquerda. O Mike LB vai chamar:",
+  opts: ["Lucky", "Ringo", "Fire", "Blitz"],
+  ans: 0,
+  exp: "TE à esquerda = força pra esquerda = Lucky."
+}, {
+  q: "Henry entra em motion lateral antes do snap. O que pode vir aí?",
+  opts: ["Smash concept", "Jet Sweep ou Jet Bubble", "Cover 3", "Buck Blitz"],
+  ans: 1,
+  exp: "Motion lateral do WR mais rápido = Jet Sweep ou a opção de Bubble Screen (Jet Bubble)."
+}, {
+  q: "O RB começa indo pro flat. Por que você não abre imediatamente pra cobrir?",
+  opts: ["Porque vai fazer hitch", "Pode ser Wheel — começa no flat e sobe fundo", "É sempre Lead, sem bola", "QB nunca olha pro flat"],
+  ans: 1,
+  exp: "Wheel parece rota curta no flat mas vira profunda. Se você abre cedo, ele já está atrás de você."
+}, {
+  q: "A defesa está lotando a caixa. O que o coordenador disse pra temer?",
+  opts: ["Corrida lateral", "Blitz total", "Rotas fundas — caixa cheia abre espaço no fundo", "JP fazendo swing"],
+  ans: 2,
+  exp: "Paulo Barcelos: 'a tendência é a defesa descer mais pra caixa, daí pode dar espaço pro fundo'."
+}, {
+  q: "Zanon (QB) está olhando pro lado esquerdo antes do snap. Onde você fica de olho?",
+  opts: ["Lado esquerdo — ele vai pra lá", "Lado direito (backside)", "No Nose Tackle", "No safety"],
+  ans: 1,
+  exp: "Zanon é fã de jogar pro backside. Olhou pra esquerda = pode jogar pra direita."
+}, {
+  q: "JP está com a bola na mão. Você vai ser:",
+  opts: ["Menos agressivo — ele é rápido", "Mais agressivo — fraco no contato 1x1", "Neutro", "Recuado — pode ser fake"],
+  ans: 1,
+  exp: "JP e Laurentino correm bem mas ficam fracos na porrada 1x1. Vá com tudo."
+}, {
+  q: "Na cobertura Smash, quem decide qual passe o QB joga?",
+  opts: ["O RB", "O Free Safety", "O Cornerback", "O Mike LB"],
+  ans: 2,
+  exp: "QB lê o CB: fechou no hitch = joga corner fundo. Ficou fundo = joga hitch. O CB controla a jogada."
+}, {
+  q: "Cover 2 tem quantas zonas de cobertura no fundo?",
+  opts: ["1", "2", "3", "4"],
+  ans: 1,
+  exp: "Cover 2 = 2 safeties dividem o fundo em dois. 5 jogadores cobrem o curto."
+}, {
+  q: "No Jet Bubble, quem 'decide' se é sweep ou bubble screen?",
+  opts: ["O QB antes do snap", "A defesa — se apertar no Henry, QB joga bubble", "O RB escolhe", "O coordenador via sinal"],
+  ans: 1,
+  exp: "É um RPO: se a defesa apertar no lado do Henry, QB joga bubble pro outro lado. A defesa escolhe qual jogada acontece."
+}, {
+  q: "Sem tag na jogada, o RB vai:",
+  opts: ["Correr pelo gap A", "Fazer rota de swing", "Bloquear como Lead", "Alinhar no slot"],
+  ans: 2,
+  exp: "Regra do playbook: sem tag = RB é sempre LEAD. Bloqueia, com foco no ombro de fora do DE do playside."
+}];
+const CATS = ["Todos", "Geral", "Ataque", "Defesa", "Rotas"];
+const FIELD_DIAGRAMS = [{
+  id: "c2",
+  label: "Cover 2 — Blue",
+  color: "#5b9bd5",
+  desc: "2 safeties no fundo, 5 jogadores no curto. Vulnerável no meio fundo (seam routes)."
+}, {
+  id: "c3",
+  label: "Cover 3 — Green",
+  color: "#5daf6c",
+  desc: "3 zonas no fundo, 4 no curto. Cobertura equilibrada e popular."
+}, {
+  id: "c4",
+  label: "Cover 4 — Orange",
+  color: "#e0a030",
+  desc: "4 zonas no fundo. Excelente contra passe profundo. Curto fica mais aberto."
+}, {
+  id: "jet",
+  label: "Jet Sweep",
+  color: "#c9a227",
+  desc: "Henry em motion recebe o handoff. RB bloqueia o DE do playside. Leitura do DE é chave."
+}, {
+  id: "lucky",
+  label: "Lucky vs Ringo",
+  color: "#d45b5b",
+  desc: "Força defensiva declarada pelo Mike LB baseado na posição do TE."
+}];
+function StatBar({
+  label,
+  val,
+  col
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 10,
+      color: G.mu,
+      marginBottom: 2,
+      fontFamily: G.mo
+    }
+  }, /*#__PURE__*/React.createElement("span", null, label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: col
+    }
+  }, val, "/10")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 3,
+      background: "rgba(255,255,255,0.07)",
+      borderRadius: 2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${val * 10}%`,
+      background: col,
+      borderRadius: 2
+    }
+  })));
+}
+function PosCard({
+  p,
+  isOff,
+  sel,
+  onClick
+}) {
+  const ac = isOff ? G.bl : G.rd;
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
+    style: {
+      background: sel ? G.aub : G.s,
+      border: `1px solid ${sel ? G.au : "rgba(201,162,39,0.15)"}`,
+      borderRadius: 8,
+      padding: "12px 14px",
+      cursor: "pointer",
+      transition: "border-color .2s"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: "bold",
+      fontFamily: G.sr,
+      color: G.tx,
+      lineHeight: 1
+    }
+  }, p.abbr), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: G.mu,
+      fontFamily: G.mo,
+      marginTop: 2
+    }
+  }, p.name)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: `${ac}18`,
+      border: `1px solid ${ac}40`,
+      borderRadius: 4,
+      padding: "2px 7px",
+      fontSize: 10,
+      color: ac,
+      fontFamily: G.mo,
+      whiteSpace: "nowrap"
+    }
+  }, p.rpg)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: G.mu2,
+      lineHeight: 1.5
+    }
+  }, p.role), sel && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      borderTop: `1px solid rgba(201,162,39,0.12)`,
+      paddingTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#c8c0b0",
+      lineHeight: 1.6,
+      marginBottom: 10
+    }
+  }, p.detail), /*#__PURE__*/React.createElement(StatBar, {
+    label: "FORÇA",
+    val: p.stats.Força,
+    col: G.rd
+  }), /*#__PURE__*/React.createElement(StatBar, {
+    label: "VELOCIDADE",
+    val: p.stats.Velocidade,
+    col: G.bl
+  }), /*#__PURE__*/React.createElement(StatBar, {
+    label: "LEITURA",
+    val: p.stats.Leitura,
+    col: G.au
+  })));
+}
+function PositionsTab() {
+  const [side, setSide] = useState("offense");
+  const [sel, setSel] = useState(null);
+  const isOff = side === "offense";
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, ["offense", "defense"].map(s => /*#__PURE__*/React.createElement("button", {
+    key: s,
+    onClick: () => {
+      setSide(s);
+      setSel(null);
+    },
+    style: {
+      background: side === s ? s === "offense" ? `${G.bl}20` : `${G.rd}20` : "none",
+      border: `1px solid ${side === s ? s === "offense" ? G.bl : G.rd : "rgba(201,162,39,0.2)"}`,
+      borderRadius: 6,
+      padding: "6px 16px",
+      color: side === s ? s === "offense" ? G.bl : G.rd : G.mu,
+      cursor: "pointer",
+      fontSize: 12,
+      fontFamily: G.mo
+    }
+  }, s === "offense" ? "⚔ ATAQUE" : "🛡 DEFESA"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
+      gap: 10
+    }
+  }, POS[side].map((p, i) => /*#__PURE__*/React.createElement(PosCard, {
+    key: i,
+    p: p,
+    isOff: isOff,
+    sel: sel === i,
+    onClick: () => setSel(sel === i ? null : i)
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      fontSize: 11,
+      color: G.mu,
+      fontFamily: G.mo,
+      textAlign: "center"
+    }
+  }, "clique em uma carta para expandir"));
+}
+function GlossaryTab() {
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("Todos");
+  const filtered = useMemo(() => GLOS.filter(g => {
+    const mq = !q || g.term.toLowerCase().includes(q.toLowerCase()) || g.def.toLowerCase().includes(q.toLowerCase());
+    const mc = cat === "Todos" || g.cat === cat;
+    return mq && mc;
+  }), [q, cat]);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "buscar termo...",
+    style: {
+      flex: "1 1 180px",
+      background: G.s,
+      border: `1px solid rgba(201,162,39,0.2)`,
+      borderRadius: 6,
+      padding: "7px 12px",
+      color: G.tx,
+      fontSize: 12,
+      fontFamily: G.mo,
+      outline: "none",
+      minWidth: 0
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, CATS.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => setCat(c),
+    style: {
+      background: cat === c ? G.aul : "none",
+      border: `1px solid ${cat === c ? G.au : "rgba(201,162,39,0.2)"}`,
+      borderRadius: 5,
+      padding: "5px 10px",
+      color: cat === c ? G.au : G.mu,
+      cursor: "pointer",
+      fontSize: 11,
+      fontFamily: G.mo
+    }
+  }, c)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, filtered.map((g, i) => {
+    const cc = g.cat === "Ataque" ? G.bl : g.cat === "Defesa" ? G.rd : g.cat === "Rotas" ? G.am : G.mu;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: G.s,
+        border: `1px solid rgba(201,162,39,0.1)`,
+        borderRadius: 7,
+        padding: "10px 14px",
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: `${cc}18`,
+        border: `1px solid ${cc}30`,
+        borderRadius: 4,
+        padding: "2px 7px",
+        fontSize: 9,
+        color: cc,
+        fontFamily: G.mo,
+        whiteSpace: "nowrap",
+        marginTop: 1
+      }
+    }, g.cat), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: "bold",
+        fontFamily: G.sr,
+        color: G.tx,
+        marginBottom: 3
+      }
+    }, g.term), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: G.mu2,
+        lineHeight: 1.5
+      }
+    }, g.def)));
+  }), !filtered.length && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: G.mu,
+      fontSize: 12,
+      textAlign: "center",
+      padding: 20,
+      fontFamily: G.mo
+    }
+  }, "nenhum resultado encontrado")));
+}
+function QuizTab() {
+  const [qi, setQi] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const [answers, setAnswers] = useState([]);
+  function pick(i) {
+    if (chosen !== null) return;
+    setChosen(i);
+    const correct = i === QUIZ[qi].ans;
+    if (correct) setScore(s => s + 1);
+    setAnswers(a => [...a, {
+      q: QUIZ[qi].q,
+      chosen: i,
+      ans: QUIZ[qi].ans,
+      exp: QUIZ[qi].exp,
+      correct
+    }]);
+  }
+  function next() {
+    if (qi + 1 >= QUIZ.length) {
+      setDone(true);
+    } else {
+      setQi(q => q + 1);
+      setChosen(null);
+    }
+  }
+  function restart() {
+    setQi(0);
+    setChosen(null);
+    setScore(0);
+    setDone(false);
+    setAnswers([]);
+  }
+  if (done) {
+    const pct = Math.round(score / QUIZ.length * 100);
+    const rank = pct >= 90 ? "Mestre da Defesa" : pct >= 70 ? "Veterano" : pct >= 50 ? "Recruta Promissor" : "Calouro";
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: 540,
+        margin: "0 auto",
+        textAlign: "center",
+        padding: "20px 0"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: G.sr,
+        fontSize: 32,
+        color: G.au,
+        marginBottom: 4
+      }
+    }, rank), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: G.mu,
+        fontFamily: G.mo,
+        marginBottom: 20
+      }
+    }, score, "/", QUIZ.length, " corretas — ", pct, "% de acerto"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 6,
+        background: "rgba(255,255,255,0.06)",
+        borderRadius: 3,
+        marginBottom: 24
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${pct}%`,
+        background: pct >= 70 ? G.gr : pct >= 50 ? G.au : G.rd,
+        borderRadius: 3
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "left",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        marginBottom: 20
+      }
+    }, answers.map((a, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: G.s,
+        border: `1px solid ${a.correct ? "rgba(93,175,108,0.3)" : "rgba(212,91,91,0.3)"}`,
+        borderRadius: 7,
+        padding: "10px 14px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center",
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        color: a.correct ? G.gr : G.rd
+      }
+    }, a.correct ? "✓" : "✗"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: G.mu2,
+        flex: 1
+      }
+    }, a.q)), !a.correct && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: G.am,
+        fontFamily: G.mo,
+        lineHeight: 1.4,
+        paddingLeft: 20
+      }
+    }, a.exp)))), /*#__PURE__*/React.createElement("button", {
+      onClick: restart,
+      style: {
+        background: G.aul,
+        border: `1px solid ${G.au}`,
+        borderRadius: 6,
+        padding: "8px 24px",
+        color: G.au,
+        cursor: "pointer",
+        fontSize: 12,
+        fontFamily: G.mo
+      }
+    }, "jogar novamente"));
+  }
+  const curr = QUIZ[qi];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 560,
+      margin: "0 auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: G.mu,
+      fontFamily: G.mo
+    }
+  }, qi + 1, "/", QUIZ.length), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: G.au,
+      fontFamily: G.mo
+    }
+  }, score, " XP")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 3,
+      background: "rgba(255,255,255,0.06)",
+      borderRadius: 2,
+      marginBottom: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${qi / QUIZ.length * 100}%`,
+      background: G.au,
+      borderRadius: 2
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: G.s,
+      border: `1px solid rgba(201,162,39,0.2)`,
+      borderRadius: 10,
+      padding: "16px 18px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: G.mu,
+      fontFamily: G.mo,
+      marginBottom: 8
+    }
+  }, "SITUAÇÃO"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      color: G.tx,
+      lineHeight: 1.6,
+      fontFamily: G.sr
+    }
+  }, curr.q)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      marginBottom: 14
+    }
+  }, curr.opts.map((o, i) => {
+    let bc = "rgba(201,162,39,0.15)";
+    let tc = G.mu2;
+    let bg = G.s;
+    if (chosen !== null) {
+      if (i === curr.ans) {
+        bc = `${G.gr}50`;
+        tc = G.gr;
+        bg = `${G.gr}0a`;
+      } else if (i === chosen && chosen !== curr.ans) {
+        bc = `${G.rd}50`;
+        tc = G.rd;
+        bg = `${G.rd}0a`;
+      }
+    }
+    return /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: () => pick(i),
+      style: {
+        background: bg,
+        border: `1px solid ${bc}`,
+        borderRadius: 7,
+        padding: "10px 14px",
+        textAlign: "left",
+        cursor: chosen !== null ? "default" : "pointer",
+        color: tc,
+        fontSize: 12,
+        lineHeight: 1.4,
+        transition: "all .15s",
+        fontFamily: "system-ui,sans-serif"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: G.mo,
+        color: G.mu,
+        marginRight: 8,
+        fontSize: 10
+      }
+    }, String.fromCharCode(65 + i), "."), o);
+  })), chosen !== null && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: chosen === curr.ans ? `${G.gr}12` : `${G.am}12`,
+      border: `1px solid ${chosen === curr.ans ? `${G.gr}30` : `${G.am}30`}`,
+      borderRadius: 7,
+      padding: "10px 14px",
+      marginBottom: 12,
+      fontSize: 11,
+      color: G.mu2,
+      lineHeight: 1.5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: chosen === curr.ans ? G.gr : G.am,
+      fontFamily: G.mo,
+      marginRight: 6
+    }
+  }, chosen === curr.ans ? "✓ CORRETO" : "→ REVISÃO"), curr.exp), /*#__PURE__*/React.createElement("button", {
+    onClick: next,
+    style: {
+      width: "100%",
+      background: G.aul,
+      border: `1px solid ${G.au}`,
+      borderRadius: 6,
+      padding: "9px",
+      color: G.au,
+      cursor: "pointer",
+      fontSize: 12,
+      fontFamily: G.mo
+    }
+  }, qi + 1 >= QUIZ.length ? "ver resultado →" : "próxima →")));
+}
+function FieldSVG({
+  id,
+  color
+}) {
+  const fw = 360,
+    fh = 220,
+    fy = 20,
+    ff = 14;
+  const half = fw / 2;
+  const baseField = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: ff,
+    y: fy,
+    width: fw,
+    height: fh,
+    fill: "rgba(20,40,20,0.5)",
+    stroke: "rgba(255,255,255,0.06)",
+    strokeWidth: "1",
+    rx: "2"
+  }), [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => /*#__PURE__*/React.createElement("line", {
+    key: n,
+    x1: ff + n * (fw / 10),
+    y1: fy,
+    x2: ff + n * (fw / 10),
+    y2: fy + fh,
+    stroke: "rgba(255,255,255,0.05)",
+    strokeWidth: "0.5"
+  })), /*#__PURE__*/React.createElement("line", {
+    x1: ff,
+    y1: fy + fh / 2,
+    x2: ff + fw,
+    y2: fy + fh / 2,
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "0.5",
+    strokeDasharray: "4,4"
+  }));
+  if (id === "c2") {
+    const deepH = fh * 0.45;
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${fw + ff * 2} ${fh + fy + 30}`,
+      style: {
+        width: "100%"
+      }
+    }, baseField, /*#__PURE__*/React.createElement("rect", {
+      x: ff,
+      y: fy,
+      width: half,
+      height: deepH,
+      fill: `${color}22`,
+      stroke: color,
+      strokeWidth: "1",
+      strokeOpacity: "0.5"
+    }), /*#__PURE__*/React.createElement("rect", {
+      x: ff + half,
+      y: fy,
+      width: half,
+      height: deepH,
+      fill: `${color}22`,
+      stroke: color,
+      strokeWidth: "1",
+      strokeOpacity: "0.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + half / 2,
+      y: fy + deepH / 2 + 4,
+      textAnchor: "middle",
+      fill: color,
+      fontSize: "11",
+      fontFamily: "'Courier New',monospace"
+    }, "FUNDO 1"), /*#__PURE__*/React.createElement("text", {
+      x: ff + half + half / 2,
+      y: fy + deepH / 2 + 4,
+      textAnchor: "middle",
+      fill: color,
+      fontSize: "11",
+      fontFamily: "'Courier New',monospace"
+    }, "FUNDO 2"), [0, 1, 2, 3, 4].map(n => /*#__PURE__*/React.createElement("rect", {
+      key: n,
+      x: ff + n * (fw / 5),
+      y: fy + deepH,
+      width: fw / 5,
+      height: fh - deepH,
+      fill: `${color}10`,
+      stroke: color,
+      strokeWidth: "0.5",
+      strokeOpacity: "0.4"
+    })), [0, 1, 2, 3, 4].map(n => /*#__PURE__*/React.createElement("text", {
+      key: n,
+      x: ff + n * (fw / 5) + fw / 10,
+      y: fy + deepH + (fh - deepH) / 2 + 4,
+      textAnchor: "middle",
+      fill: `${color}aa`,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "zone")), /*#__PURE__*/React.createElement("line", {
+      x1: ff,
+      y1: fy + fh,
+      x2: ff + fw,
+      y2: fy + fh,
+      stroke: "rgba(255,255,255,0.15)",
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw / 2,
+      y: fy + fh + 16,
+      textAnchor: "middle",
+      fill: "rgba(255,255,255,0.2)",
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "LINHA DE SCRIMMAGE"));
+  }
+  if (id === "c3") {
+    const deepH = fh * 0.45,
+      zw = fw / 3;
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${fw + ff * 2} ${fh + fy + 30}`,
+      style: {
+        width: "100%"
+      }
+    }, baseField, [0, 1, 2].map(n => /*#__PURE__*/React.createElement("rect", {
+      key: n,
+      x: ff + n * zw,
+      y: fy,
+      width: zw,
+      height: deepH,
+      fill: `${color}22`,
+      stroke: color,
+      strokeWidth: "1",
+      strokeOpacity: "0.5"
+    })), ["FUNDO E", "FUNDO C", "FUNDO D"].map((l, n) => /*#__PURE__*/React.createElement("text", {
+      key: n,
+      x: ff + n * zw + zw / 2,
+      y: fy + deepH / 2 + 4,
+      textAnchor: "middle",
+      fill: color,
+      fontSize: "10",
+      fontFamily: "'Courier New',monospace"
+    }, l)), [0, 1, 2, 3].map(n => /*#__PURE__*/React.createElement("rect", {
+      key: n,
+      x: ff + n * (fw / 4),
+      y: fy + deepH,
+      width: fw / 4,
+      height: fh - deepH,
+      fill: `${color}10`,
+      stroke: color,
+      strokeWidth: "0.5",
+      strokeOpacity: "0.4"
+    })), /*#__PURE__*/React.createElement("line", {
+      x1: ff,
+      y1: fy + fh,
+      x2: ff + fw,
+      y2: fy + fh,
+      stroke: "rgba(255,255,255,0.15)",
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw / 2,
+      y: fy + fh + 16,
+      textAnchor: "middle",
+      fill: "rgba(255,255,255,0.2)",
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "LINHA DE SCRIMMAGE"));
+  }
+  if (id === "c4") {
+    const deepH = fh * 0.5,
+      zw = fw / 4;
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${fw + ff * 2} ${fh + fy + 30}`,
+      style: {
+        width: "100%"
+      }
+    }, baseField, [0, 1, 2, 3].map(n => /*#__PURE__*/React.createElement("rect", {
+      key: n,
+      x: ff + n * zw,
+      y: fy,
+      width: zw,
+      height: deepH,
+      fill: `${color}22`,
+      stroke: color,
+      strokeWidth: "1",
+      strokeOpacity: "0.5"
+    })), ["F1", "F2", "F3", "F4"].map((l, n) => /*#__PURE__*/React.createElement("text", {
+      key: n,
+      x: ff + n * zw + zw / 2,
+      y: fy + deepH / 2 + 4,
+      textAnchor: "middle",
+      fill: color,
+      fontSize: "11",
+      fontFamily: "'Courier New',monospace"
+    }, l)), [0, 1, 2].map(n => /*#__PURE__*/React.createElement("rect", {
+      key: n,
+      x: ff + n * (fw / 3),
+      y: fy + deepH,
+      width: fw / 3,
+      height: fh - deepH,
+      fill: `${color}10`,
+      stroke: color,
+      strokeWidth: "0.5",
+      strokeOpacity: "0.35"
+    })), /*#__PURE__*/React.createElement("line", {
+      x1: ff,
+      y1: fy + fh,
+      x2: ff + fw,
+      y2: fy + fh,
+      stroke: "rgba(255,255,255,0.15)",
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw / 2,
+      y: fy + fh + 16,
+      textAnchor: "middle",
+      fill: "rgba(255,255,255,0.2)",
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "LINHA DE SCRIMMAGE"));
+  }
+  if (id === "jet") {
+    const ly = fy + fh - 30,
+      qx = ff + fw / 2,
+      rbx = ff + fw * 0.65,
+      wrx = ff + fw * 0.82,
+      dex = ff + fw * 0.82;
+    const arrowY = ly - 40;
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${fw + ff * 2} ${fh + fy + 30}`,
+      style: {
+        width: "100%"
+      }
+    }, baseField, [-2, -1, 0, 1, 2].map(n => /*#__PURE__*/React.createElement("circle", {
+      key: n,
+      cx: qx + n * 28,
+      cy: ly,
+      r: 10,
+      fill: `${G.bl}30`,
+      stroke: G.bl,
+      strokeWidth: "1",
+      strokeOpacity: "0.6"
+    })), /*#__PURE__*/React.createElement("text", {
+      x: qx,
+      y: ly + 4,
+      textAnchor: "middle",
+      fill: G.bl,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "QB"), /*#__PURE__*/React.createElement("circle", {
+      cx: rbx,
+      cy: ly - 24,
+      r: 10,
+      fill: `${G.bl}30`,
+      stroke: G.bl,
+      strokeWidth: "1.5",
+      strokeOpacity: "0.8"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: rbx,
+      y: ly - 20,
+      textAnchor: "middle",
+      fill: G.bl,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "RB"), /*#__PURE__*/React.createElement("circle", {
+      cx: wrx,
+      cy: ly - 60,
+      r: 10,
+      fill: `${G.au}40`,
+      stroke: G.au,
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: wrx,
+      y: ly - 56,
+      textAnchor: "middle",
+      fill: G.au,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "WR"), /*#__PURE__*/React.createElement("circle", {
+      cx: dex,
+      cy: ly + 2,
+      r: 10,
+      fill: `${G.rd}30`,
+      stroke: G.rd,
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: dex,
+      y: ly + 6,
+      textAnchor: "middle",
+      fill: G.rd,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "DE"), /*#__PURE__*/React.createElement("path", {
+      d: `M${wrx},${ly - 50} L${ff + fw * 0.3},${arrowY}`,
+      stroke: G.au,
+      strokeWidth: "2",
+      strokeDasharray: "6,3",
+      fill: "none",
+      markerEnd: "url(#arr)"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: `M${rbx},${ly - 14} L${dex - 10},${ly - 8}`,
+      stroke: G.bl,
+      strokeWidth: "1.5",
+      strokeDasharray: "4,3",
+      fill: "none"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw * 0.3 - 10,
+      y: arrowY - 8,
+      fill: G.au,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "HENRY (motion)"), /*#__PURE__*/React.createElement("text", {
+      x: (rbx + dex) / 2,
+      y: ly - 20,
+      textAnchor: "middle",
+      fill: G.mu,
+      fontSize: "8",
+      fontFamily: "'Courier New',monospace"
+    }, "lead block"), /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
+      id: "arr",
+      markerWidth: "6",
+      markerHeight: "6",
+      refX: "3",
+      refY: "3",
+      orient: "auto"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M0,0 L6,3 L0,6 Z",
+      fill: G.au
+    }))), /*#__PURE__*/React.createElement("line", {
+      x1: ff,
+      y1: fy + fh,
+      x2: ff + fw,
+      y2: fy + fh,
+      stroke: "rgba(255,255,255,0.15)",
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw / 2,
+      y: fy + fh + 16,
+      textAnchor: "middle",
+      fill: "rgba(255,255,255,0.2)",
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "LINHA DE SCRIMMAGE"));
+  }
+  if (id === "lucky") {
+    const ly = fy + fh - 20,
+      qx = ff + fw / 2;
+    const half = fw / 2;
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${fw + ff * 2} ${fh + fy + 30}`,
+      style: {
+        width: "100%"
+      }
+    }, baseField, /*#__PURE__*/React.createElement("rect", {
+      x: ff,
+      y: fy,
+      width: half,
+      height: fh,
+      fill: "rgba(212,91,91,0.06)",
+      stroke: "rgba(212,91,91,0.3)",
+      strokeWidth: "1",
+      strokeDasharray: "4,3"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + half / 2,
+      y: fy + 20,
+      textAnchor: "middle",
+      fill: G.rd,
+      fontSize: "12",
+      fontFamily: "'Courier New',monospace"
+    }, "LUCKY (força)"), /*#__PURE__*/React.createElement("rect", {
+      x: ff + half,
+      y: fy,
+      width: half,
+      height: fh,
+      fill: "rgba(91,155,213,0.04)",
+      stroke: "rgba(91,155,213,0.15)",
+      strokeWidth: "0.5",
+      strokeDasharray: "4,3"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + half + half / 2,
+      y: fy + 20,
+      textAnchor: "middle",
+      fill: `${G.bl}70`,
+      fontSize: "12",
+      fontFamily: "'Courier New',monospace"
+    }, "RINGO"), [-2, -1, 0, 1, 2].map(n => /*#__PURE__*/React.createElement("circle", {
+      key: n,
+      cx: qx + n * 28,
+      cy: ly,
+      r: 10,
+      fill: `${G.bl}25`,
+      stroke: G.bl,
+      strokeWidth: "0.8",
+      strokeOpacity: "0.5"
+    })), /*#__PURE__*/React.createElement("circle", {
+      cx: ff + fw * 0.18,
+      cy: ly,
+      r: 11,
+      fill: `${G.rd}30`,
+      stroke: G.rd,
+      strokeWidth: "2"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw * 0.18,
+      y: ly + 4,
+      textAnchor: "middle",
+      fill: G.rd,
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "TE"), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw * 0.18,
+      y: ly + 22,
+      textAnchor: "middle",
+      fill: G.au,
+      fontSize: "8",
+      fontFamily: "'Courier New',monospace"
+    }, "→ LUCKY"), /*#__PURE__*/React.createElement("line", {
+      x1: ff,
+      y1: fy + fh,
+      x2: ff + fw,
+      y2: fy + fh,
+      stroke: "rgba(255,255,255,0.15)",
+      strokeWidth: "1.5"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: ff + fw / 2,
+      y: fy + fh + 16,
+      textAnchor: "middle",
+      fill: "rgba(255,255,255,0.2)",
+      fontSize: "9",
+      fontFamily: "'Courier New',monospace"
+    }, "LINHA DE SCRIMMAGE"));
+  }
+  return null;
+}
+function FieldTab() {
+  const [sel, setSel] = useState("c2");
+  const curr = FIELD_DIAGRAMS.find(f => f.id === sel);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 14,
+      flexWrap: "wrap"
+    }
+  }, FIELD_DIAGRAMS.map(f => /*#__PURE__*/React.createElement("button", {
+    key: f.id,
+    onClick: () => setSel(f.id),
+    style: {
+      background: sel === f.id ? `${f.color}18` : "none",
+      border: `1px solid ${sel === f.id ? f.color : "rgba(201,162,39,0.2)"}`,
+      borderRadius: 5,
+      padding: "5px 10px",
+      color: sel === f.id ? f.color : G.mu,
+      cursor: "pointer",
+      fontSize: 10,
+      fontFamily: G.mo
+    }
+  }, f.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: G.s,
+      border: `1px solid rgba(201,162,39,0.15)`,
+      borderRadius: 10,
+      padding: "16px",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement(FieldSVG, {
+    id: sel,
+    color: curr.color
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: G.s2,
+      borderRadius: 7,
+      padding: "10px 14px",
+      fontSize: 11,
+      color: G.mu2,
+      lineHeight: 1.6,
+      borderLeft: `2px solid ${curr.color}`
+    }
+  }, curr.desc));
+}
+function App() {
+  const [tab, setTab] = useState("pos");
+  const tabs = [{
+    id: "pos",
+    label: "⚔ Posições"
+  }, {
+    id: "glos",
+    label: "📖 Glossário"
+  }, {
+    id: "quiz",
+    label: "🎯 Quiz"
+  }, {
+    id: "field",
+    label: "🗺 Campo"
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: G.bg,
+      minHeight: "100vh",
+      color: G.tx,
+      fontFamily: "system-ui,sans-serif"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderBottom: `1px solid ${G.aul}`,
+      padding: "14px 20px",
+      display: "flex",
+      alignItems: "center",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: G.sr,
+      fontSize: 18,
+      color: G.au,
+      letterSpacing: 2
+    }
+  }, "ISTEPOS"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "1px",
+      height: 14,
+      background: G.aul
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: G.mu,
+      fontFamily: G.mo,
+      letterSpacing: 1
+    }
+  }, "DEFENSIVE PLAYBOOK — PHASE 3")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      borderBottom: `1px solid ${G.aul}`,
+      padding: "0 20px",
+      overflowX: "auto"
+    }
+  }, tabs.map(t => /*#__PURE__*/React.createElement("button", {
+    key: t.id,
+    onClick: () => setTab(t.id),
+    style: {
+      background: "none",
+      border: "none",
+      borderBottom: `2px solid ${tab === t.id ? G.au : "transparent"}`,
+      color: tab === t.id ? G.au : G.mu,
+      padding: "11px 14px",
+      cursor: "pointer",
+      fontSize: 12,
+      fontFamily: G.mo,
+      whiteSpace: "nowrap",
+      transition: "color .2s"
+    }
+  }, t.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 20,
+      maxWidth: 700,
+      margin: "0 auto"
+    }
+  }, tab === "pos" && /*#__PURE__*/React.createElement(PositionsTab, null), tab === "glos" && /*#__PURE__*/React.createElement(GlossaryTab, null), tab === "quiz" && /*#__PURE__*/React.createElement(QuizTab, null), tab === "field" && /*#__PURE__*/React.createElement(FieldTab, null)));
+}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+
+
+</script>
+</body></html>

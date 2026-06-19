@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rotfather — Dossiê</title>
+<style>html,body{margin:0;padding:0;background:#0e0e12;}</style>
+<script src="../vendor/react.js"></script>
+<script src="../vendor/react-dom.js"></script>
+</head><body><div id="root"></div>
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useReducer
+} = React;
+const TABS = ["Quadro do Detetive", "Pesquisa de Mercado", "Estrutura LN", "Trends & SEO", "Trama & Arcos", "Moodboard", "Kanban"];
+
+// Color palette - noir/detective
+const C = {
+  bg: "#1a1610",
+  board: "#2a2318",
+  cork: "#3d3225",
+  pin: "#c41e1e",
+  string: "#e63333",
+  yellow: "#f5e6a0",
+  green: "#b8d8a0",
+  pink: "#f0b8c0",
+  blue: "#a0c8e0",
+  orange: "#f0c878",
+  gold: "#d4a843",
+  text: "#e8dcc8",
+  textDark: "#2a2318",
+  accent: "#c41e1e"
+};
+
+// ============ POST-IT COMPONENT ============
+function PostIt({
+  color = C.yellow,
+  title,
+  children,
+  rotation = 0,
+  width = "260px",
+  onClick
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
+    style: {
+      background: color,
+      color: C.textDark,
+      padding: "16px 14px 20px",
+      width,
+      minHeight: "80px",
+      borderRadius: "2px",
+      position: "relative",
+      cursor: onClick ? "pointer" : "default",
+      transform: `rotate(${rotation}deg)`,
+      transition: "transform 0.2s, box-shadow 0.2s",
+      boxShadow: "3px 3px 12px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.05)",
+      fontFamily: "'Caveat', cursive",
+      fontSize: "15px",
+      lineHeight: 1.4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: "-6px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "10px",
+      height: "10px",
+      borderRadius: "50%",
+      background: C.pin,
+      boxShadow: "0 0 4px rgba(196,30,30,0.6), inset 0 -1px 2px rgba(0,0,0,0.3)"
+    }
+  }), title && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: "17px",
+      marginBottom: "6px",
+      borderBottom: `1px solid ${C.textDark}33`,
+      paddingBottom: "4px"
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "14px"
+    }
+  }, children));
+}
+
+// ============ SECTION HEADER ============
+function SectionHead({
+  children
+}) {
+  return /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: "'Special Elite', cursive",
+      color: C.gold,
+      fontSize: "28px",
+      borderBottom: `2px solid ${C.gold}44`,
+      paddingBottom: "8px",
+      marginBottom: "20px",
+      letterSpacing: "2px",
+      textTransform: "uppercase"
+    }
+  }, children);
+}
+
+// ============ DATA TABLE ============
+function DataTable({
+  headers,
+  rows
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto",
+      marginBottom: "20px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: "100%",
+      borderCollapse: "collapse",
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "13px"
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, headers.map((h, i) => /*#__PURE__*/React.createElement("th", {
+    key: i,
+    style: {
+      background: C.cork,
+      color: C.gold,
+      padding: "10px 8px",
+      textAlign: "left",
+      borderBottom: `2px solid ${C.gold}66`,
+      whiteSpace: "nowrap"
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, rows.map((row, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i,
+    style: {
+      background: i % 2 === 0 ? `${C.board}` : `${C.cork}55`
+    }
+  }, row.map((cell, j) => /*#__PURE__*/React.createElement("td", {
+    key: j,
+    style: {
+      padding: "8px",
+      color: C.text,
+      borderBottom: `1px solid ${C.cork}`,
+      whiteSpace: j === 0 ? "nowrap" : "normal"
+    }
+  }, cell)))))));
+}
+
+// ============ INSIGHT CARD ============
+function Insight({
+  icon,
+  title,
+  text
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `${C.cork}88`,
+      border: `1px solid ${C.gold}33`,
+      borderRadius: "6px",
+      padding: "14px",
+      marginBottom: "12px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Special Elite', cursive",
+      color: C.gold,
+      fontSize: "16px",
+      marginBottom: "6px"
+    }
+  }, icon, " ", title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.text,
+      fontSize: "14px",
+      lineHeight: 1.5
+    }
+  }, text));
+}
+
+// ============ TAB: QUADRO DO DETETIVE ============
+function TabQuadro() {
+  const questions = [{
+    q: "Por que eles estão em outra jurisdição?",
+    color: C.yellow,
+    r: -2
+  }, {
+    q: "Qual é o caso principal? O que o Pistone investiga?",
+    color: C.pink,
+    r: 1.5
+  }, {
+    q: "Como a Crise de 29 afeta o esgoto?",
+    color: C.green,
+    r: -1
+  }, {
+    q: "Qual o papel da Copa do Mundo de 1930?",
+    color: C.blue,
+    r: 2
+  }, {
+    q: "Como os Giordano lucram com a crise?",
+    color: C.orange,
+    r: -1.5
+  }, {
+    q: "Quem é o Antagonista? Perfil?",
+    color: C.pink,
+    r: 1
+  }, {
+    q: "Quem é o Pupilo do Pistone?",
+    color: C.yellow,
+    r: -2.5
+  }, {
+    q: "Como os rachas se conectam ao contrabando?",
+    color: C.green,
+    r: 2.5
+  }, {
+    q: "Qual o segredo que Pistone descobre?",
+    color: C.orange,
+    r: -1
+  }, {
+    q: "Onde Kane entra na história?",
+    color: C.blue,
+    r: 1.5
+  }];
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "🔍 Quadro de Investigação — Perguntas-Chave"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: C.text,
+      fontFamily: "'Special Elite', cursive",
+      marginBottom: "20px",
+      fontSize: "15px",
+      opacity: 0.8
+    }
+  }, "\"Todo caso começa com as perguntas certas.\" — Cada post-it é uma peça do quebra-cabeça da trama."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    style: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: 0
+    },
+    viewBox: "0 0 800 600"
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: "150",
+    y1: "80",
+    x2: "450",
+    y2: "90",
+    stroke: C.string,
+    strokeWidth: "1.5",
+    opacity: "0.4",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "450",
+    y1: "90",
+    x2: "300",
+    y2: "250",
+    stroke: C.string,
+    strokeWidth: "1.5",
+    opacity: "0.4",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "150",
+    y1: "250",
+    x2: "600",
+    y2: "80",
+    stroke: C.string,
+    strokeWidth: "1.5",
+    opacity: "0.3",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "300",
+    y1: "250",
+    x2: "600",
+    y2: "250",
+    stroke: C.string,
+    strokeWidth: "1.5",
+    opacity: "0.4",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "150",
+    y1: "420",
+    x2: "450",
+    y2: "420",
+    stroke: C.string,
+    strokeWidth: "1.5",
+    opacity: "0.3",
+    strokeDasharray: "4,4"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px",
+      justifyContent: "center",
+      position: "relative",
+      zIndex: 1
+    }
+  }, questions.map((item, i) => /*#__PURE__*/React.createElement(PostIt, {
+    key: i,
+    color: item.color,
+    rotation: item.r,
+    width: "220px",
+    title: `Pista #${i + 1}`
+  }, item.q)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: "30px"
+    }
+  }, /*#__PURE__*/React.createElement(SectionHead, null, "📋 Fichas dos Personagens"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.yellow,
+    title: "Daniel C. Pistone",
+    rotation: -1,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Espécie:"), " Rato | ", /*#__PURE__*/React.createElement("b", null, "Função:"), " Detetive", "\n", /*#__PURE__*/React.createElement("b", null, "Origem:"), " Humilde, família amorosa", "\n", /*#__PURE__*/React.createElement("b", null, "Trauma:"), " Pai morto (bala perdida, guerra mafiosa) aos 15", "\n", /*#__PURE__*/React.createElement("b", null, "Melhor amigo:"), " Al Kane (rato de rua, acolhido pela família)", "\n", /*#__PURE__*/React.createElement("b", null, "Conflito:"), " Briga com Kane após morte do pai → separação", "\n", /*#__PURE__*/React.createElement("b", null, "Carreira:"), " Academia aos 17 → Detetive", "\n", /*#__PURE__*/React.createElement("b", null, "Característica:"), " Um dos únicos policiais não-corrompidos (10%)"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.pink,
+    title: "Família Giordano",
+    rotation: 1.5,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Ativa desde:"), " 1882", "\n", /*#__PURE__*/React.createElement("b", null, "Líder:"), " Enrico Giordano", "\n", /*#__PURE__*/React.createElement("b", null, "Origem:"), " Gangue de rua adolescente → máfia estruturada", "\n", /*#__PURE__*/React.createElement("b", null, "Espírito:"), " Rebelde, valente, astuto, leal", "\n", /*#__PURE__*/React.createElement("b", null, "Atividades:"), " Rachas, contrabando de peças, falsificação", "\n", /*#__PURE__*/React.createElement("b", null, "Diferencial:"), " Nunca largaram o espírito de rua"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.green,
+    title: "Al Kane",
+    rotation: -2,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Espécie:"), " Rato de rua", "\n", /*#__PURE__*/React.createElement("b", null, "Relação:"), " Melhor amigo de Pistone desde os 6 anos", "\n", /*#__PURE__*/React.createElement("b", null, "Background:"), " Acolhido pela família Pistone", "\n", /*#__PURE__*/React.createElement("b", null, "Conflito:"), " Briga após morte do pai de Pistone → parte", "\n", /*#__PURE__*/React.createElement("b", null, "Status atual:"), " Desconhecido (potencial para retorno)"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.orange,
+    title: "Pupilo do Pistone [CRIAR]",
+    rotation: 2,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Espécie:"), " A definir", "\n", /*#__PURE__*/React.createElement("b", null, "Função:"), " Aprendiz do Pistone", "\n", /*#__PURE__*/React.createElement("b", null, "Papel na trama:"), " Envolvido no racha inicial (in media res)", "\n", /*#__PURE__*/React.createElement("b", null, "Status:"), " ⚠️ FICHA PENDENTE"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Antagonista [CRIAR]",
+    rotation: -1.5,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Espécie:"), " A definir", "\n", /*#__PURE__*/React.createElement("b", null, "Função:"), " Vilão principal do caso Giordano", "\n", /*#__PURE__*/React.createElement("b", null, "Papel na trama:"), " Duelo com o pupilo no racha (in media res)", "\n", /*#__PURE__*/React.createElement("b", null, "Conexão:"), " Família Giordano", "\n", /*#__PURE__*/React.createElement("b", null, "Status:"), " ⚠️ FICHA PENDENTE"))));
+}
+
+// ============ TAB: PESQUISA DE MERCADO ============
+function TabPesquisa() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "📊 Pesquisa de Mercado — Light Novels"), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🌍",
+    title: "Mercado Global (2024)",
+    text: "O mercado global de light novels atingiu USD 1,74 bilhão em 2024, com projeção de crescer 7,1% ao ano (CAGR) até 2033, chegando a USD 3,18 bilhões. A Ásia-Pacífico responde por 60% da receita. América do Norte é o mercado que mais cresce (CAGR 9,2%)."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🇧🇷",
+    title: "Mercado Brasil (2024-2025)",
+    text: "Apenas 25 volumes de LN publicados no Brasil em 2024 (queda para 20 em 2025). Apenas 3 editoras: Panini (líder, 12-15 vol/ano), NewPOP (4-6, em crise), JBC (3-4). Preço médio: R$ 49,90 (variando de R$ 36,90 a R$ 69,90). Mercado considerado 'pífio e inerte' — ENORME oportunidade para quem inovar."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "💰",
+    title: "Faturamento Editorial BR",
+    text: "Setor editorial brasileiro: R$ 4,2 bilhões em 2024 (+3,7% nominal). Conteúdo digital cresceu 21,6%. Ficção adulta e Não-ficção lideram. Livros digitais já são 9% do faturamento total."
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "🏆 Top Light Novels — Vendas All-Time"), /*#__PURE__*/React.createElement(DataTable, {
+    headers: ["Série", "Vendas", "Volumes", "Gênero", "Início"],
+    rows: [["That Time I Got Reincarnated as a Slime", "96M+", "22", "Isekai/Fantasia", "2014"], ["The Apothecary Diaries", "45M+", "16", "Mistério/Histórico", "2014"], ["Guin Saga", "33M", "149", "Fantasia/Épico", "1979"], ["A Certain Magical Index", "31M", "51", "Sci-fi/Fantasia", "2004"], ["Sword Art Online", "30M", "27", "Sci-fi/Isekai", "2009"], ["The Irregular at Magic High School", "25M", "32", "Sci-fi/Fantasia", "2011"], ["Slayers", "22M", "17", "Fantasia/Comédia", "1989"], ["Haruhi Suzumiya", "20M", "12", "Sci-fi/Comédia", "2003"], ["DanMachi", "20M", "20", "Fantasia/Aventura", "2013"], ["Mushoku Tensei", "15.5M", "26", "Isekai/Drama", "2014"], ["Kagerou Project", "15M", "8", "Mistério/Sci-fi", "2012"], ["Overlord", "14M", "16", "Isekai/Dark Fantasy", "2012"], ["Re:Zero", "13M", "41", "Isekai/Thriller", "2014"], ["Shield Hero", "13M", "22", "Isekai/Aventura", "2013"], ["Ascendance of a Bookworm", "13M", "33", "Isekai/Slice-of-life", "2015"], ["Classroom of the Elite", "10.8M", "31", "Thriller/Psicológico", "2015"], ["KonoSuba", "10M", "17", "Isekai/Comédia", "2013"], ["Goblin Slayer", "10M", "15", "Dark Fantasy", "2016"], ["No Game No Life", "6M", "10", "Isekai/Estratégia", "2012"], ["The Eminence in Shadow", "6.5M", "6", "Isekai/Ação", "2018"]]
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "🔥 Top Vendas 2024 (Oricon)"), /*#__PURE__*/React.createElement(DataTable, {
+    headers: ["Série", "Vendas 2024", "Gênero", "Fator de Sucesso"],
+    rows: [["The Apothecary Diaries", "1.350.491", "Mistério/Histórico", "Anime adaptação massiva"], ["Haikyuu!!", "800.574 (LN)", "Esporte", "Filme + nostalgia"], ["Classroom of the Elite", "~300K", "Thriller psicológico", "Conclusão da série"], ["The Angel Next Door", "~200K", "Romance/Slice-of-life", "Anime 2023"], ["Gundam Seed Freedom", "~200K", "Sci-fi/Mecha", "Filme"], ["Slime (Reincarnated)", "~150K", "Isekai/Fantasia", "Franquia estabelecida"]]
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "📌 Insight-Chave: The Apothecary Diaries"), /*#__PURE__*/React.createElement(Insight, {
+    icon: "⭐",
+    title: "Por que é #1?",
+    text: "Mistura única de mistério + histórico + romance lento. Protagonista feminina inteligente (Maomao, farmacêutica/detetive). Episódios auto-contidos dentro de trama maior. Anime impecável multiplicou vendas 3x (de ~460K/ano para 1.35M em 2024). 45M+ cópias total da franquia."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🎯",
+    title: "Paralelo com Pistone",
+    text: "Apothecary Diaries PROVA que mistério funciona em LN. Maomao = detetive médica; Pistone = detetive policial. Ambos usam expertise específica para resolver casos. A chave é: cada capítulo/volume tem um 'caso' episódico dentro da trama maior. O setting histórico exótico (China imperial vs. Esgotos 1930s) é um diferencial massivo."
+  }));
+}
+
+// ============ TAB: ESTRUTURA LN ============
+function TabEstrutura() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "📐 Anatomia de uma Light Novel"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px",
+      marginBottom: "24px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.yellow,
+    title: "Formato Físico",
+    rotation: -1,
+    width: "240px"
+  }, /*#__PURE__*/React.createElement("b", null, "Tamanho:"), " Bunkobon (A6) ~10.5 × 14.8cm", "\n", /*#__PURE__*/React.createElement("b", null, "Páginas:"), " 200-300 por volume", "\n", /*#__PURE__*/React.createElement("b", null, "Palavras:"), " 40.000-60.000 por volume", "\n", /*#__PURE__*/React.createElement("b", null, "Preço JP:"), " ¥540-700 (~USD $5-7)", "\n", /*#__PURE__*/React.createElement("b", null, "Preço EN:"), " USD $8-15 (físico), $5-10 (digital)", "\n", /*#__PURE__*/React.createElement("b", null, "Preço BR:"), " R$ 36,90 - R$ 69,90"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.green,
+    title: "Ilustrações",
+    rotation: 1,
+    width: "240px"
+  }, /*#__PURE__*/React.createElement("b", null, "Capa:"), " Full-color, arte anime (a mais polida)", "\n", /*#__PURE__*/React.createElement("b", null, "Frontispício:"), " 2-4 páginas coloridas no início", "\n", /*#__PURE__*/React.createElement("b", null, "Interior:"), " 4-8 ilustrações P&B", "\n", /*#__PURE__*/React.createElement("b", null, "Total:"), " 6-12 artes por volume", "\n", /*#__PURE__*/React.createElement("b", null, "Função:"), " Marcam momentos dramáticos"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.pink,
+    title: "Capítulos",
+    rotation: -1.5,
+    width: "240px"
+  }, /*#__PURE__*/React.createElement("b", null, "Qtd por volume:"), " 6-15 capítulos", "\n", /*#__PURE__*/React.createElement("b", null, "Páginas/cap:"), " 15-60 (varia muito)", "\n", /*#__PURE__*/React.createElement("b", null, "Arcos:"), " 1-3 volumes por arco", "\n", /*#__PURE__*/React.createElement("b", null, "Frequência:"), " Novo volume a cada 3-9 meses", "\n", /*#__PURE__*/React.createElement("b", null, "Tempo de leitura:"), " 3-5 horas por volume"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Estilo de Escrita",
+    rotation: 2,
+    width: "240px"
+  }, /*#__PURE__*/React.createElement("b", null, "Diálogo-first:"), " Páginas inteiras de conversa", "\n", /*#__PURE__*/React.createElement("b", null, "Descrição:"), " 2-4 linhas máx. antes do diálogo", "\n", /*#__PURE__*/React.createElement("b", null, "Monólogo interior:"), " Central (voz do protagonista)", "\n", /*#__PURE__*/React.createElement("b", null, "Parágrafos:"), " Curtos e diretos", "\n", /*#__PURE__*/React.createElement("b", null, "Tom:"), " Conversacional, acessível")), /*#__PURE__*/React.createElement(SectionHead, null, "📖 Estrutura Narrativa Padrão de Sucesso"), /*#__PURE__*/React.createElement(Insight, {
+    icon: "1️⃣",
+    title: "Volume 1 — O Gancho",
+    text: "Apresenta mundo, protagonista, e resolve um caso completo. Deve funcionar como standalone mas deixar fios abertos. O leitor PRECISA sentir que resolveu algo E que há mais por vir."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "2️⃣",
+    title: "Padrão Episódico + Arco",
+    text: "Cada volume tem 1-2 casos/problemas resolvidos (satisfação imediata) + avanço da trama maior (hook para continuar). Apothecary Diaries faz isso perfeitamente: caso médico por capítulo + conspiração palaciana no fundo."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "3️⃣",
+    title: "Cliffhangers Estratégicos",
+    text: "Não terminar TODOS os capítulos em cliffhanger (cansa o leitor). Alternar: capítulos de alta tensão → capítulos de respiro → capítulo-bomba. Final do volume SEMPRE com cliffhanger ou revelação."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "4️⃣",
+    title: "Voz do Protagonista",
+    text: "O monólogo interno é a ALMA da light novel. A personalidade do protagonista deve ser inconfundível. Cada pensamento deve revelar caráter. Para Pistone: comentários afiados, observações de detetive, conflito moral constante."
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "📏 Proposta para Pistone — Volume 1"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `${C.cork}88`,
+      border: `1px solid ${C.gold}33`,
+      borderRadius: "6px",
+      padding: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.gold,
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "18px",
+      marginBottom: "10px"
+    }
+  }, "Estrutura Sugerida"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.text,
+      fontSize: "14px",
+      lineHeight: 1.8
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "Palavras:"), " ~50.000 (meio-termo ideal)", "\n", /*#__PURE__*/React.createElement("b", null, "Capítulos:"), " 10-12 capítulos", "\n", /*#__PURE__*/React.createElement("b", null, "Páginas estimadas:"), " ~220-260", "\n", /*#__PURE__*/React.createElement("b", null, "Ilustrações:"), " Capa + 2 coloridas + 6 P&B = 9 total", "\n", /*#__PURE__*/React.createElement("b", null, "Arco:"), " 1 caso completo dos Giordano + setup para Vol. 2", "\n", /*#__PURE__*/React.createElement("b", null, "Abertura:"), " In Media Res — racha entre Pupilo e Antagonista", "\n", /*#__PURE__*/React.createElement("b", null, "Estrutura interna:"), " Cap 1 (racha/ação) → Caps 2-3 (setup/caso) → Caps 4-8 (investigação episódica) → Caps 9-10 (revelação) → Cap 11-12 (confronto + cliffhanger)")));
+}
+
+// ============ TAB: TRENDS & SEO ============
+function TabTrends() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "📈 Trends & Zeitgeist 2024-2026"), /*#__PURE__*/React.createElement(Insight, {
+    icon: "📱",
+    title: "BookTok = Kingmaker",
+    text: "59 milhões de livros vendidos em 2024 diretamente atribuídos ao BookTok. Romance e Fantasia dominam, mas Crime/Thriller e 'Cozy Mystery' estão crescendo rapidamente. O BookTok transforma autores desconhecidos em bestsellers da noite pro dia. Implicação: conteúdo visual/clippável do Pistone é essencial."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🔥",
+    title: "Romantasy Explodiu",
+    text: "Vendas de Sci-fi + Fantasy cresceram 41,3% entre 2023-2024. 'Romantasy' (Romance + Fantasy) é o gênero #1 no BookTok. Implicação para Pistone: adicionar um elemento romântico sutil pode ampliar drasticamente o público. Um interesse amoroso para o detetive."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🕵️",
+    title: "Mystery Books CAGR 4,9%",
+    text: "Livros de mistério projetados para crescer 4,9% ao ano. Cozy Mysteries em alta (Thursday Murder Club, Finlay Donovan). O público quer mistérios com personalidade, humor e um setting único. Pistone TEM TUDO: setting único (esgoto), personalidade (rato detetive), tom noir."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🎮",
+    title: "Transmídia é Obrigatório",
+    text: "Light novels de sucesso viram manga, anime, games, merchandise. Planeje desde o Volume 1 pensando em adaptação. The Rotfather já é um universo — a LN é uma porta de entrada. Cada personagem precisa ser 'merchandisável'."
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "🔎 SEO & Descobribilidade"), /*#__PURE__*/React.createElement(DataTable, {
+    headers: ["Termo", "Tendência", "Relevância p/ Pistone"],
+    rows: [["light novel mystery", "Crescendo", "⭐⭐⭐⭐⭐ — Nicho exato"], ["detective novel series", "Estável/Alto", "⭐⭐⭐⭐⭐ — Público amplo"], ["noir fiction", "Estável", "⭐⭐⭐⭐ — Estética core"], ["animal fiction", "Crescendo", "⭐⭐⭐⭐ — Diferencial do Rotfather"], ["cozy mystery", "Explosão", "⭐⭐⭐ — Oposto do tom, mas público cruzado"], ["romantasy", "Pico", "⭐⭐⭐ — Se adicionar romance"], ["booktok thriller", "Alto", "⭐⭐⭐⭐ — Canal de divulgação"], ["1930s historical fiction", "Nicho estável", "⭐⭐⭐⭐ — Setting"], ["web novel português", "Crescendo", "⭐⭐⭐⭐⭐ — Canal de publicação inicial"], ["self publishing light novel", "Crescendo 17%/ano", "⭐⭐⭐⭐⭐ — Modelo de negócio"]]
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "🌍 Zeitgeist — O Espírito do Tempo"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.yellow,
+    title: "Nostalgia & Escapismo",
+    rotation: -1,
+    width: "250px"
+  }, "Público busca mundos detalhados para se perder. Settings históricos em alta. A estética dos anos 30 (Art Deco, Jazz, Noir) está na moda. Peaky Blinders criou fome por era similar."), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.pink,
+    title: "Anti-heróis & Moral Cinza",
+    rotation: 1.5,
+    width: "250px"
+  }, "Público cansado de heróis perfeitos. Pistone é bom mas SOZINHO num mundo corrompido — tensão perfeita. O público quer ver a luta interna: até onde ir para fazer o certo?"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.green,
+    title: "Copa do Mundo 2026",
+    rotation: -2,
+    width: "250px"
+  }, "Estamos em ano de Copa! Pistone se passa na época da Copa de 1930. Marketing: \"A primeira Copa do Mundo vista pelos olhos de quem vive nos esgotos\". Timing PERFEITO para lançamento."), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Crise Econômica",
+    rotation: 1,
+    width: "250px"
+  }, "Paralelos entre Crise de 29 e instabilidade atual ressoam. Temas de desigualdade, corrupção e sobrevivência são universais. Falsificação como resposta à escassez = comentário social atual.")), /*#__PURE__*/React.createElement(SectionHead, null, "🏪 Canais de Distribuição Recomendados"), /*#__PURE__*/React.createElement(DataTable, {
+    headers: ["Canal", "Tipo", "Por quê"],
+    rows: [["Amazon KDP", "Digital/Print-on-demand", "Maior alcance global, self-pub direto"], ["Wattpad / Tapas", "Web novel (gratuito/freemium)", "Construir audiência antes de monetizar"], ["BookWalker", "Digital (LN específico)", "Plataforma #1 para LNs"], ["J-Novel Club model", "Assinatura/capítulos", "Modelo de serialização comprovado"], ["Catarse/Apoia.se", "Crowdfunding BR", "Financiar impressão + gauge de interesse"], ["Redes sociais", "Marketing", "BookTok, Instagram, YouTube"], ["Eventos (CCXP, Bienal)", "Venda direta", "Contato com público-alvo BR"]]
+  }));
+}
+
+// ============ TAB: TRAMA & ARCOS ============
+function TabTrama() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "🎭 Desenvolvimento de Trama"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px",
+      marginBottom: "30px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.yellow,
+    title: "TRAMA A — O Caso Giordano",
+    rotation: -1,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Central:"), " Pistone investiga operação de contrabando de peças automotivas dos Giordano.", "\n", /*#__PURE__*/React.createElement("b", null, "Gancho:"), " O contrabando está ligado a rachas ilegais.", "\n", /*#__PURE__*/React.createElement("b", null, "Escalada:"), " O caso revela algo maior — falsificação em escala industrial aproveitando a Crise de 29.", "\n", /*#__PURE__*/React.createElement("b", null, "Tensão:"), " 90% da polícia é comprada. Pistone investiga sozinho (ou quase).", "\n", /*#__PURE__*/React.createElement("b", null, "Resolução Vol.1:"), " Pistone desmonta uma operação, mas descobre que é apenas a ponta do iceberg."), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.pink,
+    title: "TRAMA B — Pessoal",
+    rotation: 1.5,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Central:"), " O passado de Pistone assombrando o presente.", "\n", /*#__PURE__*/React.createElement("b", null, "Gatilho:"), " Algo no caso Giordano conecta à morte do pai.", "\n", /*#__PURE__*/React.createElement("b", null, "Possibilidade:"), " Kane reaparece — do outro lado. Trabalha para os Giordano? Ou está infiltrado?", "\n", /*#__PURE__*/React.createElement("b", null, "Tensão:"), " Pistone precisa escolher entre a lei e a lealdade.", "\n", /*#__PURE__*/React.createElement("b", null, "Status:"), " ⚠️ DEFINIR"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.green,
+    title: "TRAMA C — O Mundo",
+    rotation: -2,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Central:"), " A Crise de 29 transformando o esgoto.", "\n", /*#__PURE__*/React.createElement("b", null, "Impacto:"), " Menos lixo dos humanos = escassez no esgoto.", "\n", /*#__PURE__*/React.createElement("b", null, "Consequência:"), " Empresas legítimas quebram. Falsificadores prosperam.", "\n", /*#__PURE__*/React.createElement("b", null, "Copa de 1930:"), " Evento que traz esperança e distração. Apostas ilegais? Contrabando relacionado?", "\n", /*#__PURE__*/React.createElement("b", null, "Atmosfera:"), " Mundo decadente mas vibrante. Jazz, fumaça, desespero bonito.")), /*#__PURE__*/React.createElement(SectionHead, null, "🎯 Arcos dos Personagens"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px",
+      marginBottom: "30px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.orange,
+    title: "Arco do Protagonista — Pistone",
+    rotation: 1,
+    width: "300px"
+  }, /*#__PURE__*/React.createElement("b", null, "Início:"), " Detetive competente mas isolado. Acredita no sistema mesmo sabendo que está podre.", "\n", /*#__PURE__*/React.createElement("b", null, "Conflito:"), " O caso força ele a operar fora das regras. Até onde ele vai sem se tornar o que combate?", "\n", /*#__PURE__*/React.createElement("b", null, "Midpoint:"), " Descobre que a corrupção é mais profunda do que imaginava.", "\n", /*#__PURE__*/React.createElement("b", null, "Crise:"), " Precisa de ajuda. Não pode confiar em ninguém no departamento.", "\n", /*#__PURE__*/React.createElement("b", null, "Fim Vol.1:"), " Aceita que ser \"bom\" num mundo ruim exige ser criativo, não apenas correto."), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Arco do Antagonista [CONSTRUIR]",
+    rotation: -1.5,
+    width: "300px"
+  }, /*#__PURE__*/React.createElement("b", null, "Sugestão:"), " Não um vilão genérico. Alguém que ACREDITA estar certo.", "\n", /*#__PURE__*/React.createElement("b", null, "Motivação:"), " A Crise de 29 destruiu algo que ele amava. Falsificação = sobrevivência → poder.", "\n", /*#__PURE__*/React.createElement("b", null, "Espelho:"), " O antagonista e Pistone são respostas diferentes à mesma dor.", "\n", /*#__PURE__*/React.createElement("b", null, "Carisma:"), " O público precisa entender (não concordar) com suas razões.", "\n", /*#__PURE__*/React.createElement("b", null, "Status:"), " ⚠️ CRIAR FICHA COMPLETA")), /*#__PURE__*/React.createElement(SectionHead, null, "🏁 Cena de Abertura — In Media Res"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `${C.cork}88`,
+      border: `1px solid ${C.gold}33`,
+      borderRadius: "8px",
+      padding: "18px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.gold,
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "18px",
+      marginBottom: "10px"
+    }
+  }, "Proposta: O Racha"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.text,
+      fontSize: "14px",
+      lineHeight: 1.8
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "Setting:"), " Túnel de esgoto adaptado como pista de corrida. Noite. Fumaça. Espectadores nas laterais.", "\n\n", /*#__PURE__*/React.createElement("b", null, "Ação:"), " Pupilo de Pistone vs. braço-direito do Antagonista. Veículos improvisados (carros em miniatura feitos de sucata humana).", "\n\n", /*#__PURE__*/React.createElement("b", null, "Tensão:"), " O pupilo está ali disfarçado, infiltrado por ordem de Pistone. Mas algo dá errado.", "\n\n", /*#__PURE__*/React.createElement("b", null, "Revelação:"), " O racha não é só um racha — é uma entrega. As peças contrabandeadas estão DENTRO dos veículos.", "\n\n", /*#__PURE__*/React.createElement("b", null, "Hook:"), " O capítulo termina com o pupilo descobrindo algo nos veículos que muda tudo. Corta para Pistone recebendo a notícia.", "\n\n", /*#__PURE__*/React.createElement("b", null, "Tom:"), " Adrenalina → Suspense → \"O que diabos é isso?\"")), /*#__PURE__*/React.createElement(SectionHead, null, "🏎️ Pesquisa: Veículos dos Anos 1930"), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🚗",
+    title: "Contexto Automotivo",
+    text: "Produção de carros caiu 75% entre 1929-1932 (de 5M para 1M). Marcas icônicas: Duesenberg Model J (luxo absoluto, $17.500), Ford DeLuxe (popular entre polícia e criminosos), Cord 810/812 (Art Deco), Bugatti Type 57 (europeu elegante), Auburn 851 (esportivo, inspirou o Batmóvel). No universo Rotfather: os veículos seriam versões em miniatura, feitos de peças descartadas pelos humanos."
+  }), /*#__PURE__*/React.createElement(Insight, {
+    icon: "🏁",
+    title: "Corridas na Época",
+    text: "Indianapolis 500 já existia (desde 1911). Corridas de rua ilegais eram comuns durante a Proibição. Para o Rotfather: os rachas aconteceriam em túneis de esgoto, usando 'carros' construídos com engenhosidade — tampas de garrafa como rodas, latas como chassis, etc."
+  }), /*#__PURE__*/React.createElement(SectionHead, null, "📰 Contexto Histórico para a Trama"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.yellow,
+    title: "Crise de 1929",
+    rotation: -1,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Impacto real:"), " Desemprego massivo, fome, migração", "\n", /*#__PURE__*/React.createElement("b", null, "No esgoto:"), " Menos comida descartada = fome. Menos lixo = escassez de materiais. Economia do esgoto entra em colapso.", "\n", /*#__PURE__*/React.createElement("b", null, "Efeito narrativo:"), " Os Giordano prosperam vendendo falsificações baratas. Pistone vê o crime como sintoma, não causa."), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.green,
+    title: "Copa do Mundo 1930",
+    rotation: 1.5,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Local:"), " Uruguai, julho de 1930", "\n", /*#__PURE__*/React.createElement("b", null, "Fato:"), " Primeira Copa da história. 13 times. Uruguai campeão (4x2 vs Argentina).", "\n", /*#__PURE__*/React.createElement("b", null, "Contexto:"), " Europeus quase não foram por causa da Crise.", "\n", /*#__PURE__*/React.createElement("b", null, "No esgoto:"), " Apostas ilegais? Rádio transmitindo? Euforia coletiva como distração da miséria? Contrabando relacionado ao evento?"), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Nova York 1930s",
+    rotation: -2,
+    width: "280px"
+  }, /*#__PURE__*/React.createElement("b", null, "Chrysler Building:"), " Inaugurado 1930 (ícone Art Deco)", "\n", /*#__PURE__*/React.createElement("b", null, "Empire State:"), " Inaugurado 1931", "\n", /*#__PURE__*/React.createElement("b", null, "Proibição:"), " Ainda vigente até 1933", "\n", /*#__PURE__*/React.createElement("b", null, "Máfia:"), " Era de ouro do crime organizado", "\n", /*#__PURE__*/React.createElement("b", null, "No esgoto:"), " Construções acima = mudanças nos túneis abaixo. Novos territórios, novas rotas.")));
+}
+
+// ============ TAB: MOODBOARD ============
+function TabMoodboard() {
+  const categories = [{
+    title: "Núcleo de Personagens",
+    items: ["Rato detetive com sobretudo e chapéu", "Rato de rua (Al Kane) — visual rebelde", "Líder mafioso sapo/rato (Enrico Giordano)", "Baratas capangas", "Aranhas informantes"],
+    color: C.yellow
+  }, {
+    title: "Veículos & Rachas",
+    items: ["Ford DeLuxe 1934 (adaptado miniatura)", "Duesenberg Model J (luxo mafioso)", "Cord 810 (Art Deco puro)", "Auburn 851 Speedster", "Carros de sucata — tampas, latas, fios"],
+    color: C.pink
+  }, {
+    title: "Cenários & Ambientes",
+    items: ["Túneis de esgoto iluminados por velas", "Pista de racha improvisada em túnel", "Bar clandestino (speakeasy subterrâneo)", "Delegacia precária", "Mercado negro no esgoto"],
+    color: C.green
+  }, {
+    title: "Figurino & Objetos",
+    items: ["Sobretudos, chapéus fedora", "Cigarros (folhas enroladas em miniatura)", "Instrumentos de jazz improvisados", "Jornais em miniatura (feitos de papel descartado)", "Armas improvisadas (agulhas, pregos)"],
+    color: C.blue
+  }, {
+    title: "Atmosfera & Textura",
+    items: ["Art Deco em miniatura", "Jazz noir — fumaça, sombras longas", "Luz de vela refletindo em água suja", "Paredes de tijolo molhadas", "Cartazes rasgados dos humanos acima"],
+    color: C.orange
+  }, {
+    title: "Referências Visuais",
+    items: ["Peaky Blinders (estética)", "Ratatouille (escala/mundo de ratos)", "Zootopia (sociedade animal)", "L.A. Confidential (noir policial)", "Bugsy Malone (gangsters + estilo único)"],
+    color: C.yellow
+  }];
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "🎨 Moodboard — Referências Visuais"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: C.text,
+      fontFamily: "'Special Elite', cursive",
+      marginBottom: "20px",
+      fontSize: "15px",
+      opacity: 0.8
+    }
+  }, "Cada categoria é uma parede do moodboard. Use estas referências para guiar a arte, o tom e a atmosfera da light novel."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px"
+    }
+  }, categories.map((cat, i) => /*#__PURE__*/React.createElement(PostIt, {
+    key: i,
+    color: cat.color,
+    title: cat.title,
+    rotation: (i % 3 - 1) * 1.5,
+    width: "280px"
+  }, cat.items.map((item, j) => /*#__PURE__*/React.createElement("div", {
+    key: j,
+    style: {
+      padding: "2px 0",
+      borderBottom: j < cat.items.length - 1 ? `1px dashed ${C.textDark}33` : "none"
+    }
+  }, "▪ ", item))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: "30px"
+    }
+  }, /*#__PURE__*/React.createElement(SectionHead, null, "🎵 Trilha Sonora Sugerida (para escrever)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(PostIt, {
+    color: C.orange,
+    title: "Jazz & Blues 1930s",
+    rotation: -1,
+    width: "260px"
+  }, "▪ Duke Ellington — \"Mood Indigo\"", "\n", "▪ Billie Holiday — \"Strange Fruit\"", "\n", "▪ Louis Armstrong — \"West End Blues\"", "\n", "▪ Cab Calloway — \"Minnie the Moocher\"", "\n", "▪ Django Reinhardt — \"Minor Swing\""), /*#__PURE__*/React.createElement(PostIt, {
+    color: C.blue,
+    title: "Noir Moderno (para ambientação)",
+    rotation: 1.5,
+    width: "260px"
+  }, "▪ Peaky Blinders OST", "\n", "▪ L.A. Noire OST", "\n", "▪ Cowboy Bebop OST (Tank!)", "\n", "▪ Baccano! OST", "\n", "▪ The Untouchables OST"))));
+}
+
+// ============ TAB: KANBAN ============
+function TabKanban() {
+  const defaultCols = {
+    backlog: [{
+      id: "t1",
+      text: "Definir ficha completa do Antagonista",
+      priority: "alta"
+    }, {
+      id: "t2",
+      text: "Criar ficha do Pupilo de Pistone",
+      priority: "alta"
+    }, {
+      id: "t3",
+      text: "Definir Trama B (pessoal/Kane)",
+      priority: "alta"
+    }, {
+      id: "t4",
+      text: "Pesquisar gírias e linguagem dos anos 30",
+      priority: "média"
+    }, {
+      id: "t5",
+      text: "Definir sistema econômico do esgoto",
+      priority: "média"
+    }, {
+      id: "t6",
+      text: "Criar mapa dos túneis/territórios",
+      priority: "média"
+    }, {
+      id: "t7",
+      text: "Definir como a Copa de 1930 entra na trama",
+      priority: "média"
+    }, {
+      id: "t8",
+      text: "Pesquisar mecânica dos rachas (veículos miniatura)",
+      priority: "média"
+    }, {
+      id: "t9",
+      text: "Outline completo dos 10-12 capítulos",
+      priority: "alta"
+    }, {
+      id: "t10",
+      text: "Definir twist/revelação do Vol.1",
+      priority: "alta"
+    }, {
+      id: "t11",
+      text: "Encontrar/comissionar ilustrador",
+      priority: "média"
+    }, {
+      id: "t12",
+      text: "Criar presença em redes sociais",
+      priority: "baixa"
+    }, {
+      id: "t13",
+      text: "Escrever sinopse de 1 parágrafo",
+      priority: "média"
+    }, {
+      id: "t14",
+      text: "Escrever Capítulo 1 (In Media Res)",
+      priority: "alta"
+    }, {
+      id: "t15",
+      text: "Definir canal de publicação (Wattpad/KDP/etc)",
+      priority: "média"
+    }],
+    progress: [],
+    review: [],
+    done: [{
+      id: "d1",
+      text: "Pesquisa de mercado de Light Novels",
+      priority: "alta"
+    }, {
+      id: "d2",
+      text: "Ficha do Daniel C. Pistone",
+      priority: "alta"
+    }, {
+      id: "d3",
+      text: "Ficha da Família Giordano",
+      priority: "alta"
+    }, {
+      id: "d4",
+      text: "Definição de época (1930s)",
+      priority: "alta"
+    }, {
+      id: "d5",
+      text: "Pesquisa de carros da época",
+      priority: "média"
+    }, {
+      id: "d6",
+      text: "Pesquisa Copa do Mundo 1930",
+      priority: "média"
+    }, {
+      id: "d7",
+      text: "Pesquisa Crise de 29",
+      priority: "média"
+    }]
+  };
+  const [cols, setCols] = useState(defaultCols);
+  const [loaded, setLoaded] = useState(false);
+  const [newTask, setNewTask] = useState("");
+  const [dragItem, setDragItem] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await window.storage.get("kanban-rotfather");
+        if (res && res.value) setCols(JSON.parse(res.value));
+      } catch {/* first time */}
+      setLoaded(true);
+    })();
+  }, []);
+  const save = useCallback(async data => {
+    try {
+      await window.storage.set("kanban-rotfather", JSON.stringify(data));
+    } catch {}
+  }, []);
+  const colNames = {
+    backlog: "📋 Backlog",
+    progress: "⚡ Em Progresso",
+    review: "🔍 Revisão",
+    done: "✅ Concluído"
+  };
+  const colColors = {
+    backlog: C.yellow,
+    progress: C.orange,
+    review: C.blue,
+    done: C.green
+  };
+  const prioColors = {
+    alta: "#e63333",
+    média: "#d4a843",
+    baixa: "#6a9f50"
+  };
+  const moveTask = (taskId, fromCol, toCol) => {
+    if (fromCol === toCol) return;
+    const newCols = {
+      ...cols
+    };
+    const taskIdx = newCols[fromCol].findIndex(t => t.id === taskId);
+    if (taskIdx === -1) return;
+    const [task] = newCols[fromCol].splice(taskIdx, 1);
+    newCols[toCol].push(task);
+    setCols(newCols);
+    save(newCols);
+  };
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    const newCols = {
+      ...cols
+    };
+    newCols.backlog.push({
+      id: `t${Date.now()}`,
+      text: newTask.trim(),
+      priority: "média"
+    });
+    setCols(newCols);
+    save(newCols);
+    setNewTask("");
+  };
+  const removeTask = (taskId, col) => {
+    const newCols = {
+      ...cols
+    };
+    newCols[col] = newCols[col].filter(t => t.id !== taskId);
+    setCols(newCols);
+    save(newCols);
+  };
+  if (!loaded) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.text,
+      padding: "40px",
+      textAlign: "center"
+    }
+  }, "Carregando board...");
+  const total = Object.values(cols).flat().length;
+  const doneCount = cols.done.length;
+  const pct = total > 0 ? Math.round(doneCount / total * 100) : 0;
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, null, "📌 Kanban — Produção da Light Novel"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: "20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      color: C.text,
+      fontSize: "13px",
+      marginBottom: "4px",
+      fontFamily: "'Special Elite', cursive"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Progresso Geral"), /*#__PURE__*/React.createElement("span", null, doneCount, "/", total, " tarefas (", pct, "%)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.cork,
+      borderRadius: "4px",
+      height: "12px",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `linear-gradient(90deg, ${C.gold}, ${C.green})`,
+      height: "100%",
+      width: `${pct}%`,
+      transition: "width 0.4s",
+      borderRadius: "4px"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "8px",
+      marginBottom: "20px"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: newTask,
+    onChange: e => setNewTask(e.target.value),
+    onKeyDown: e => e.key === "Enter" && addTask(),
+    placeholder: "Nova tarefa...",
+    style: {
+      flex: 1,
+      padding: "10px 14px",
+      background: C.cork,
+      border: `1px solid ${C.gold}44`,
+      borderRadius: "4px",
+      color: C.text,
+      fontSize: "14px",
+      fontFamily: "'Special Elite', cursive",
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: addTask,
+    style: {
+      padding: "10px 20px",
+      background: C.gold,
+      color: C.textDark,
+      border: "none",
+      borderRadius: "4px",
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "14px",
+      cursor: "pointer",
+      fontWeight: 700
+    }
+  }, "+ Adicionar")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: "12px"
+    }
+  }, Object.entries(colNames).map(([key, name]) => /*#__PURE__*/React.createElement("div", {
+    key: key,
+    onDragOver: e => e.preventDefault(),
+    onDrop: () => {
+      if (dragItem) {
+        moveTask(dragItem.id, dragItem.col, key);
+        setDragItem(null);
+      }
+    },
+    style: {
+      background: `${C.cork}66`,
+      borderRadius: "6px",
+      padding: "10px",
+      border: `2px solid ${colColors[key]}33`,
+      minHeight: "300px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: colColors[key],
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "15px",
+      fontWeight: 700,
+      marginBottom: "10px",
+      textAlign: "center",
+      borderBottom: `2px solid ${colColors[key]}44`,
+      paddingBottom: "6px"
+    }
+  }, name, " (", cols[key].length, ")"), cols[key].map(task => /*#__PURE__*/React.createElement("div", {
+    key: task.id,
+    draggable: true,
+    onDragStart: () => setDragItem({
+      id: task.id,
+      col: key
+    }),
+    style: {
+      background: C.board,
+      borderRadius: "4px",
+      padding: "8px 10px",
+      marginBottom: "6px",
+      borderLeft: `3px solid ${prioColors[task.priority]}`,
+      cursor: "grab",
+      fontSize: "13px",
+      color: C.text,
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingRight: "20px"
+    }
+  }, task.text), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      top: "2px",
+      right: "6px",
+      fontSize: "10px",
+      color: prioColors[task.priority],
+      fontFamily: "'Special Elite', cursive"
+    }
+  }, task.priority), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "4px",
+      marginTop: "6px"
+    }
+  }, Object.keys(colNames).filter(k => k !== key).map(k => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => moveTask(task.id, key, k),
+    style: {
+      padding: "2px 6px",
+      fontSize: "10px",
+      background: `${colColors[k]}33`,
+      color: colColors[k],
+      border: `1px solid ${colColors[k]}55`,
+      borderRadius: "3px",
+      cursor: "pointer",
+      fontFamily: "'Special Elite', cursive"
+    }
+  }, "→ ", k === "backlog" ? "BL" : k === "progress" ? "PR" : k === "review" ? "RV" : "OK")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => removeTask(task.id, key),
+    style: {
+      padding: "2px 6px",
+      fontSize: "10px",
+      background: "#44111133",
+      color: "#cc4444",
+      border: "1px solid #cc444455",
+      borderRadius: "3px",
+      cursor: "pointer",
+      marginLeft: "auto"
+    }
+  }, "✕"))))))));
+}
+
+// ============ MAIN APP ============
+function RotfatherBoard() {
+  const [tab, setTab] = useState(0);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      minHeight: "100vh",
+      color: C.text,
+      fontFamily: "Georgia, serif",
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("link", {
+    href: "https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@400;700&display=swap",
+    rel: "stylesheet"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `linear-gradient(135deg, ${C.board}, ${C.bg})`,
+      borderBottom: `3px solid ${C.gold}44`,
+      padding: "20px 24px 16px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "12px",
+      color: C.gold,
+      letterSpacing: "4px",
+      textTransform: "uppercase",
+      marginBottom: "4px"
+    }
+  }, "The Rotfather Universe — Light Novel Development"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "32px",
+      color: C.text,
+      margin: "0 0 4px",
+      letterSpacing: "3px",
+      textShadow: `2px 2px 8px rgba(0,0,0,0.5)`
+    }
+  }, "🔍 CASO PISTONE — DOSSIÊ #001"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "13px",
+      color: `${C.text}88`,
+      fontFamily: "'Special Elite', cursive"
+    }
+  }, "Família Giordano · Nova York, 1930 · Rachas & Contrabando")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "4px",
+      padding: "10px 16px",
+      background: C.board,
+      borderBottom: `1px solid ${C.cork}`,
+      justifyContent: "center"
+    }
+  }, TABS.map((t, i) => /*#__PURE__*/React.createElement("button", {
+    key: i,
+    onClick: () => setTab(i),
+    style: {
+      padding: "8px 14px",
+      border: `1px solid ${tab === i ? C.gold : C.cork}`,
+      background: tab === i ? `${C.gold}22` : "transparent",
+      color: tab === i ? C.gold : `${C.text}88`,
+      borderRadius: "4px",
+      cursor: "pointer",
+      fontFamily: "'Special Elite', cursive",
+      fontSize: "13px",
+      transition: "all 0.2s"
+    }
+  }, t))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "20px 24px",
+      maxWidth: "1100px",
+      margin: "0 auto"
+    }
+  }, tab === 0 && /*#__PURE__*/React.createElement(TabQuadro, null), tab === 1 && /*#__PURE__*/React.createElement(TabPesquisa, null), tab === 2 && /*#__PURE__*/React.createElement(TabEstrutura, null), tab === 3 && /*#__PURE__*/React.createElement(TabTrends, null), tab === 4 && /*#__PURE__*/React.createElement(TabTrama, null), tab === 5 && /*#__PURE__*/React.createElement(TabMoodboard, null), tab === 6 && /*#__PURE__*/React.createElement(TabKanban, null)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "20px",
+      borderTop: `1px solid ${C.cork}`,
+      fontSize: "12px",
+      color: `${C.text}55`,
+      fontFamily: "'Special Elite', cursive"
+    }
+  }, "Dossiê Pistone v1.0 — Confidencial — The Rotfather Universe © 2026"));
+}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(RotfatherBoard));
+
+
+</script>
+</body></html>
